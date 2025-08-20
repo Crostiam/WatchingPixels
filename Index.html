@@ -50,7 +50,7 @@
         .taskbar-item { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: var(--border-radius-sm); padding: 8px 12px; height: 36px; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
         .taskbar-item.active { background: rgba(var(--primary-rgb), 0.2); border-color: var(--primary); }
         .window { position: absolute; min-width: 350px; min-height: 250px; background: var(--bg-glass); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); border-radius: var(--border-radius); box-shadow: var(--window-shadow); display: flex; flex-direction: column; overflow: hidden; z-index: 100; resize: both; }
-        .window.maximized { top: var(--topbar-height) !important; left: 0 !important; width: 100vw !important; height: calc(100vh - var(--topbar-height) - var(--taskbar-height)) !important; resize: none; border-radius: 0; }
+        .window.maximized { top: -20px !important; left: -20px !important; width: calc(100% + 40px) !important; height: calc(100% + 40px) !important; resize: none; border-radius: 0; }
         .window.minimized { display: none; }
         .window.active { z-index: 101; box-shadow: 0 0 0 2px var(--primary), var(--window-shadow); }
         .window-header { background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(var(--primary-rgb), 0.1) 100%); border-bottom: 1px solid var(--glass-border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none; }
@@ -219,7 +219,7 @@
             'Terminal': { type: 'app', appId: 'terminal', icon: 'ri-terminal-box-line'},
             'Music Player': { type: 'app', appId: 'music', icon: 'ri-music-2-line'},
             'Help': { type: 'app', appId: 'help', icon: 'ri-question-line'},
-            'Bookmarks': { type: 'app', appId: 'bookmarks', icon: 'ri-bookmarks-3-fill'},
+            'Bookmarks': { type: 'app', appId: 'bookmarks', icon: 'ri-bookmarks-line'},
             'Welcome.txt': { type: 'file', content: 'Welcome to your Mini OS!\n\nTo get started, right-click on the desktop for options like creating new files and folders.\n\nFor a full guide on all the features, open the "Help" application from the desktop or Start Menu.' },
             'Images': { type: 'folder', children: { 
                 'cyber-cat.jpg': { type: 'file', content: 'https://i.pinimg.com/originals/44/1a/c9/441ac90467439745d3163689cc5943a9.jpg' }
@@ -796,7 +796,7 @@
                     launch: () => {
                         windowManager.create({
                             title: 'Help', icon: 'ri-question-line', className: 'help-window', width: 600, height: 500,
-                            content: `<div class="help-content">
+                            content: `
                                 <h2>Welcome to Mini OS Help</h2>
                                 <p>This guide will help you navigate the features of this operating system.</p>
                                 
@@ -832,8 +832,7 @@
                                         <tr><td><code>pwd</code></td><td>Prints the current working directory path.</td></tr>
                                         <tr><td><code>clear</code></td><td>Clears the terminal screen.</td></tr>
                                     </tbody>
-                                </table>
-                               </div>`
+                                </table>`
                         });
                     }
                 },
@@ -1239,9 +1238,9 @@
                         break;
                     case 'start':
                         menuItems = Object.keys(defaultDesktopItems)
-                            .map(name => defaultDesktopItems[name])
+                            .map(name => ({name, ...defaultDesktopItems[name]}))
                             .filter(i => i.type === 'app')
-                            .map(app => `<div class="context-item" data-action="launch-app" data-appid="${app.appId}"><i class="${app.icon}"></i>${app.appId.charAt(0).toUpperCase() + app.appId.slice(1)}</div>`)
+                            .map(app => `<div class="context-item" data-action="launch-app" data-appid="${app.appId}"><i class="${app.icon}"></i>${app.name}</div>`)
                             .join('');
                         break;
                     case 'explorer-bg':
