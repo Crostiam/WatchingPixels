@@ -3,2029 +3,1525 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ProjLib - Desktop Style</title>
-    <meta name="description" content="Access legal entertainment and information resources">
+    <title>ProjLib - Mini OS</title>
+    <meta name="description" content="A Mini OS in your browser">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
     <style>
         :root {
-            --primary: #ffcc00;
-            --primary-dark: #ffaa00;
-            --primary-light: #ffdd44;
-            --bg-dark: #121212;
-            --bg-darker: #0a0a0a;
-            --bg-container: rgba(25, 25, 45, 0.95);
-            --text-light: #f0f0f0;
-            --text-lighter: #ffffff;
-            --text-dark: #222;
-            --text-gray: #aaa;
-            --success: #10b981;
-            --error: #ef4444;
-            --info: #3b82f6;
-            --warning: #f59e0b;
-            --transition: all 0.3s ease-in-out;
-            --window-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            --border-radius: 10px;
-            --taskbar-height: 45px;
-            --topbar-height: 45px;
-        }
-
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-        }
-
-        body { 
-            background-color: var(--bg-dark); 
-            color: var(--text-light); 
-            font-family: "Orbitron", "Segoe UI", sans-serif; 
-            min-height: 100vh;
-            overflow: hidden;
-            font-size: 14px;
-        }
-
-        body.light-theme { 
-            background: #f5f5f7; 
-            color: var(--text-dark); 
-        }
-
-        #desktop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            background: url('https://images.unsplash.com/photo-1639762681057-408e52192e55?q=80&w=2232&auto=format&fit=crop') center/cover;
-            transition: background 0.5s ease;
-        }
-
-        /* Top Control Bar */
-        #top-controls {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: var(--topbar-height);
-            background: rgba(20, 20, 35, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 0 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 1000;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.4);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        /* System info/clock */
-        #system-info {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            color: var(--text-gray);
-            font-size: 12px;
-        }
-
-        #clock {
-            padding: 5px 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 4px;
-        }
-
-        /* URL Input Container */
-        #url-container {
-            display: flex;
-            gap: 8px;
-            flex: 1;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        #url-input {
-            flex: 1;
-            padding: 10px 15px;
-            border-radius: 24px;
-            border: none;
-            background: rgba(50, 50, 80, 0.9);
-            color: white;
-            font-family: inherit;
-            font-size: 14px;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
-        }
-
-        #url-input:focus {
-            outline: 2px solid var(--primary);
-            background: rgba(60, 60, 100, 0.95);
-        }
-
-        #go-btn {
-            background: var(--primary);
-            color: #222;
-            border: none;
-            border-radius: 24px;
-            padding: 0 20px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: var(--transition);
-            white-space: nowrap;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        #go-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        /* Control Buttons */
-        .control-btn {
-            background: rgba(60, 60, 90, 0.7);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            transition: var(--transition);
-        }
-
-        .control-btn:hover {
-            background: rgba(90, 90, 120, 0.9);
-            transform: translateY(-1px);
-        }
-
-        .control-btn i {
-            font-size: 16px;
-        }
-
-        /* Taskbar Styles */
-        #taskbar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: var(--taskbar-height);
-            background: rgba(20, 20, 35, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 0 15px;
-            display: flex;
-            gap: 8px;
-            z-index: 1000;
-            box-shadow: 0 -2px 15px rgba(0,0,0,0.4);
-            border-top: 1px solid rgba(255,255,255,0.1);
-            align-items: center;
-        }
-
-        #start-btn {
-            background: var(--primary);
-            color: #222;
-            border: none;
-            border-radius: 6px;
-            padding: 0 15px;
-            height: 30px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        #taskbar-apps {
-            display: flex;
-            gap: 8px;
-            flex: 1;
-            overflow-x: auto;
-            padding: 0 10px;
-        }
-
-        /* Hide scrollbar for taskbar */
-        #taskbar-apps::-webkit-scrollbar {
-            display: none;
-        }
-
-        .taskbar-item {
-            background: rgba(60, 60, 90, 0.7);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 12px;
-            height: 30px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            transition: var(--transition);
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .taskbar-item:hover {
-            background: rgba(90, 90, 120, 0.9);
-        }
-
-        .taskbar-item.active {
-            background: var(--primary);
-            color: #222;
-        }
-
-        .taskbar-item i {
-            font-size: 16px;
-        }
-
-        /* Window Styles */
-        .window {
-            position: absolute;
-            min-width: 400px;
-            min-height: 300px;
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--window-shadow);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            z-index: 100;
-            resize: both;
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: transform 0.2s ease, opacity 0.2s ease;
-        }
-
-        .window-header {
-            background: #2a2a4a;
-            color: white;
-            padding: 10px 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: move;
-            user-select: none;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .window-title {
-            font-size: 14px;
-            font-weight: bold;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .window-title i {
-            font-size: 16px;
-            opacity: 0.8;
-        }
-
-        .window-controls {
-            display: flex;
-            gap: 8px;
-        }
-
-        .window-control {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .window-control:hover {
-            opacity: 0.8;
-        }
-
-        .window-close {
-            background: #ff5f56;
-        }
-
-        .window-minimize {
-            background: #ffbd2e;
-        }
-
-        .window-maximize {
-            background: #27c93f;
-        }
-
-        .window-fullscreen {
-            background: #3b82f6;
-        }
-
-        .window-refresh {
-            background: #3b82f6;
-        }
-
-        .window-content {
-            flex: 1;
-            border: none;
-            background: white;
-        }
-
-        .window.active {
-            z-index: 101;
-            box-shadow: 0 0 0 2px var(--primary), var(--window-shadow);
-        }
-
-        .window.minimized {
-            display: none;
-        }
-
-        /* Notes Window Specific Styles */
-        .notes-window .window-content {
-            background: #fff9e6;
-            padding: 0;
-            color: #333;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .notes-toolbar {
-            display: flex;
-            gap: 8px;
-            padding: 10px;
-            background: #f0e6cc;
-            border-bottom: 1px solid #ddd;
-            flex-wrap: wrap;
-        }
-
-        .notes-toolbar button {
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 6px 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 13px;
-        }
-
-        .notes-toolbar button:hover {
-            background: #f0f0f0;
-        }
-
-        .notes-content {
-            min-height: 200px;
-            outline: none;
-            padding: 15px;
-            flex: 1;
-            overflow-y: auto;
-        }
-        
-        /* Notes Hub Window Specific Styles */
-        .notes-hub-window .window-content {
-            background: #f0f0f0;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .notes-hub-list {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .notes-hub-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .notes-hub-item:hover {
-            background: #e0e0e0;
-        }
-        
-        .notes-hub-item-title {
-            font-weight: bold;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            flex: 1;
-        }
-        
-        .notes-hub-actions {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .notes-hub-actions button {
-            background: none;
-            border: none;
-            color: var(--error);
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        /* Alarm Window Specific Styles */
-        .alarm-window .window-content {
-            background: #f0f0f0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .alarm-form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .alarm-form input, .alarm-form select {
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-family: inherit;
-        }
-
-        .alarm-form button {
-            background: var(--primary);
-            border: none;
-            padding: 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: var(--transition);
-        }
-
-        .alarm-form button:hover {
-            background: var(--primary-dark);
-        }
-
-        .alarms-list {
-            margin-top: 15px;
-            max-height: 200px;
-            overflow-y: auto;
-            border-radius: 6px;
-        }
-
-        .alarm-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: white;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .alarm-item button {
-            background: var(--error);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        /* Background Selector Styles */
-        .bg-selector-window .window-content {
-            padding: 15px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            overflow-y: auto;
-        }
-        
-        #upload-bg-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            border: 2px dashed #ccc;
-            border-radius: 8px;
-            padding: 20px;
-            cursor: pointer;
-            text-align: center;
-            transition: var(--transition);
-        }
-        
-        #upload-bg-section:hover {
-            border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .bg-option {
-            aspect-ratio: 16/9;
-            background-size: cover;
-            background-position: center;
-            border-radius: 8px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: var(--transition);
-            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-        }
-
-        .bg-option:hover {
-            transform: scale(1.05);
-            border-color: var(--primary);
-        }
-
-        .bg-option.selected {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary), 0 3px 10px rgba(0,0,0,0.2);
-        }
-
-        /* Bookmarks Overlay */
-        #bookmarks-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(5px);
-            z-index: 2000;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        #bookmarks-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-            width: 90%;
-            max-width: 1200px;
-            max-height: 80vh;
-            overflow-y: auto;
-            padding: 30px;
-            background: rgba(30, 30, 50, 0.8);
-            border-radius: var(--border-radius);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .bookmark-category {
-            background: rgba(40, 40, 70, 0.9);
-            border-radius: var(--border-radius);
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-
-        .bookmark-category h3 {
-            color: var(--primary);
-            margin-bottom: 15px;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .bookmark-category h3 i {
-            font-size: 18px;
-        }
-
-        .bookmark-item {
-            padding: 10px 12px;
-            margin-bottom: 10px;
-            background: rgba(60, 60, 90, 0.7);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            position: relative;
-        }
-
-        .bookmark-item:hover {
-            background: rgba(80, 80, 110, 0.9);
-            transform: translateX(5px);
-        }
-
-        .bookmark-item i {
-            font-size: 14px;
-            color: var(--primary);
-        }
-
-        .bookmark-delete {
-            position: absolute;
-            right: 10px;
-            color: var(--error);
-            opacity: 0;
-            transition: var(--transition);
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .bookmark-item:hover .bookmark-delete {
-            opacity: 1;
-        }
-
-        #custom-bookmarks {
-            grid-column: 1 / -1;
-        }
-
-        #add-bookmark-form {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        #new-bookmark-url, #new-bookmark-name {
-            padding: 10px 12px;
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(60, 60, 90, 0.8);
-            color: white;
-            font-family: inherit;
-        }
-
-        #new-bookmark-name {
-            width: 150px;
-        }
-
-        #add-bookmark-btn {
-            background: var(--success);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 0 15px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        #add-bookmark-btn:hover {
-            background: #0da271;
-        }
-
-        #close-bookmarks {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: var(--error);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 20px;
-            transition: var(--transition);
-        }
-
-        #close-bookmarks:hover {
-            transform: rotate(90deg);
-        }
-
-        /* Notification Styles */
-        .notification {
-            position: fixed;
-            top: 60px;
-            right: 20px;
-            padding: 12px 20px;
-            background: #333;
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 2001;
-            transform: translateX(200%);
-            transition: transform 0.3s ease;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .notification.show {
-            transform: translateX(0);
-        }
-
-        .notification.success {
-            background: var(--success);
-        }
-
-        .notification.error {
-            background: var(--error);
-        }
-
-        .notification.warning {
-            background: var(--warning);
-        }
-
-        .notification.info {
-            background: var(--info);
-        }
-
-        /* Context Menu */
-        #context-menu {
-            position: fixed;
-            background: rgba(40, 40, 60, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 8px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-            z-index: 3000;
-            display: none;
-            overflow: hidden;
-            min-width: 180px;
-            padding: 10px; /* Add padding for the timer */
-        }
-        
-        #start-menu-time {
-            color: #aaa;
-            font-size: 12px;
-            padding: 5px 15px;
-            text-align: center;
-        }
-
-        .context-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            transition: var(--transition);
-            border-radius: 6px; /* Add border-radius for a better look */
-        }
-
-        .context-item:hover {
-            background: rgba(70, 70, 100, 0.8);
-        }
-
-        .context-item i {
-            font-size: 16px;
-            width: 20px;
-        }
-
-        /* Responsive Styles */
-        @media (max-width: 1024px) {
-            #bookmarks-container {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 768px) {
-            #top-controls {
-                flex-wrap: wrap;
-                height: auto;
-                padding: 10px;
-            }
-            
-            .control-btn span {
-                display: none;
-            }
-            
-            #url-container {
-                order: 3;
-                width: 100%;
-                margin-top: 10px;
-            }
-            
-            #system-info {
-                display: none;
-            }
-            
-            #bookmarks-container {
-                grid-template-columns: 1fr;
-                padding: 20px 15px;
-            }
-            
-            .window {
-                min-width: 300px;
-                min-height: 250px;
-            }
-            
-            #add-bookmark-form {
-                flex-direction: column;
-            }
-            
-            #new-bookmark-name {
-                width: 100%;
-            }
-            
-            #taskbar {
-                padding: 0 10px;
-            }
-            
-            .taskbar-item span {
-                display: none;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .control-btn {
-                padding: 8px;
-            }
-            
-            .bookmark-category {
-                padding: 15px;
-            }
-            
-            .window {
-                min-width: 280px;
-                min-height: 200px;
-            }
-        }
-
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(100, 100, 130, 0.6);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(120, 120, 150, 0.8);
-        }
+            --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #8b5cf6; --primary-rgb: 99, 102, 241;
+            --accent: #f59e0b; --accent-dark: #d97706;
+            --bg-dark: #0f0f23; --bg-darker: #070716; --bg-surface: #1a1a2e;
+            --bg-glass: rgba(30, 30, 50, 0.8); --bg-overlay: rgba(15, 15, 35, 0.9);
+            --text-light: #e2e8f0; --text-lighter: #f8fafc; --text-primary: #cbd5e1; --text-secondary: #94a3b8; --text-muted: #64748b; --text-dark: #1e293b;
+            --success: #22c55e; --error: #ef4444; --warning: #f59e0b; --info: #06b6d4;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --spring: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            --window-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.1); --glass-blur: blur(10px);
+            --border-radius: 12px; --border-radius-sm: 8px;
+            --taskbar-height: 48px; --topbar-height: 48px;
+            --font-family-primary: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-family-mono: "JetBrains Mono", "SF Mono", Monaco, monospace;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-darker) 100%); color: var(--text-primary); font-family: var(--font-family-primary); min-height: 100vh; overflow: hidden; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 20% 50%, rgba(var(--primary-rgb), 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%); animation: backgroundFloat 20s ease-in-out infinite; pointer-events: none; z-index: -1; }
+        @keyframes backgroundFloat { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+        #desktop { position: fixed; top: var(--topbar-height); left: 0; right: 0; bottom: var(--taskbar-height); background-size: cover; background-position: center; z-index: 1; padding: 20px; user-select: none;}
+        #desktop-icons { position: relative; width: 100%; height: 100%; }
+        .desktop-icon { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100px; padding: 10px; border-radius: var(--border-radius-sm); cursor: pointer; text-align: center; font-size: 13px; color: var(--text-lighter); text-shadow: 1px 1px 3px rgba(0,0,0,0.5); border: 1px solid transparent; transition: top 0.2s, left 0.2s; }
+        .desktop-icon:hover, .desktop-icon.selected { background: rgba(var(--primary-rgb), 0.2); border-color: rgba(var(--primary-rgb), 0.4); }
+        .desktop-icon i { font-size: 36px; color: white; pointer-events: none;}
+        .desktop-icon-name { width: 100%; word-wrap: break-word; pointer-events: none; padding: 2px; }
+        .desktop-icon-name.editing { pointer-events: all; background: white; color: black; outline: 1px solid var(--primary); }
+        #selection-box { position: absolute; border: 1px solid var(--primary); background: rgba(var(--primary-rgb), 0.2); z-index: 1000; pointer-events: none; }
+        #top-controls { position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-height); background: var(--bg-glass); backdrop-filter: var(--glass-blur); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; box-shadow: var(--shadow-md); }
+        #system-info { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+        #clock { padding: 8px 12px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--border-radius-sm); font-family: var(--font-family-mono); }
+        #url-container { display: flex; gap: 8px; flex: 1; max-width: 600px; margin: 0 auto; }
+        #url-input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--glass-bg); color: var(--text-primary); }
+        #go-btn, .control-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: var(--border-radius-sm); padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        #go-btn { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; }
+        #taskbar { position: fixed; bottom: 0; left: 0; right: 0; height: var(--taskbar-height); background: var(--bg-glass); backdrop-filter: var(--glass-blur); border-top: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px; padding: 0 16px; z-index: 1000; }
+        #start-btn { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%); color: white; border: none; border-radius: var(--border-radius-sm); padding: 0 16px; height: 36px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        #taskbar-apps { display: flex; gap: 8px; flex: 1; overflow-x: auto; }
+        .taskbar-item { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: var(--border-radius-sm); padding: 8px 12px; height: 36px; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+        .taskbar-item.active { background: rgba(var(--primary-rgb), 0.2); border-color: var(--primary); }
+        .window { position: absolute; min-width: 350px; min-height: 250px; background: var(--bg-glass); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); border-radius: var(--border-radius); box-shadow: var(--window-shadow); display: flex; flex-direction: column; overflow: hidden; z-index: 100; resize: both; }
+        .window.maximized { top: var(--topbar-height) !important; left: 0 !important; width: 100vw !important; height: calc(100vh - var(--topbar-height) - var(--taskbar-height)) !important; resize: none; border-radius: 0; }
+        .window.minimized { display: none; }
+        .window.active { z-index: 101; box-shadow: 0 0 0 2px var(--primary), var(--window-shadow); }
+        .window-header { background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(var(--primary-rgb), 0.1) 100%); border-bottom: 1px solid var(--glass-border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none; }
+        .window-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; display: flex; align-items: center; gap: 8px; }
+        .window-controls { display: flex; gap: 8px; }
+        .window-control { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; color: white; }
+        .window-close { background: #ff5f56; } .window-minimize { background: #ffbd2e; } .window-maximize { background: #27c93f; } .window-refresh { background: var(--info); } .window-fullscreen { background: var(--primary); }
+        .window-content { flex: 1; border: none; background: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; color: var(--text-dark); }
+        .text-editor-window .window-content { padding: 0; }
+        .text-editor-content { flex: 1; width: 100%; height: 100%; border: none; outline: none; padding: 10px; font-family: var(--font-family-mono); background: #fdfdfd; color: #333; resize: none;}
+        .file-explorer-window .window-content { padding: 0; background: #fff; }
+        .file-explorer-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px; background: #f0f0f0; border-bottom: 1px solid #ddd; flex-shrink: 0;}
+        .file-explorer-toolbar button { background: none; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
+        .file-explorer-toolbar button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .file-explorer-breadcrumbs { flex: 1; display: flex; gap: 4px; font-size: 14px; color: #333; }
+        .breadcrumb-item { cursor: pointer; padding: 4px; } .breadcrumb-item:hover { background: #e0e0e0; border-radius: 4px; }
+        .file-explorer-grid { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px; padding: 10px; overflow-y: auto; height: 100%; flex: 1;}
+        .file-explorer-grid .desktop-icon { position: static; color: var(--text-dark); text-shadow: none; }
+        .file-explorer-grid .desktop-icon i { color: var(--primary); }
+        #bookmarks-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-overlay); backdrop-filter: var(--glass-blur); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #bookmarks-container { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; width: 90%; max-width: 1200px; max-height: 80vh; padding: 32px; background: var(--bg-glass); border-radius: var(--border-radius); overflow-y: auto; }
+        .select-container { display: flex; align-items: center; gap: 10px; background: var(--glass-bg); padding: 10px; border-radius: var(--border-radius-sm); border: 1px solid var(--glass-border); }
+        .select-container i { font-size: 24px; color: var(--primary-light); }
+        .select-container select { background: transparent; border: none; color: var(--text-light); font-size: 16px; -webkit-appearance: none; appearance: none; cursor: pointer; }
+        .select-container select option { background: var(--bg-surface); color: var(--text-light); }
+        #custom-bookmarks { flex-shrink: 0; width: 100%; background: rgba(var(--primary-rgb), 0.05); border: 1px solid var(--glass-border); border-radius: var(--border-radius); padding: 24px; }
+        .bookmark-list { max-height: 300px; overflow-y: auto; margin-right: -10px; padding-right: 10px; }
+        .bookmark-item { padding: 12px 14px; margin-bottom: 8px; background: var(--glass-bg); border-radius: var(--border-radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: space-between; position: relative; }
+        .bookmark-item .delete-bookmark { background: var(--error); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; line-height: 18px; text-align: center; cursor: pointer; opacity: 0; transition: opacity 0.2s; }
+        .bookmark-item:hover .delete-bookmark { opacity: 1; }
+        #add-bookmark-form { display: flex; gap: 10px; margin-top: 15px; }
+        #add-bookmark-form input { flex: 1; padding: 8px; } #add-bookmark-form button { padding: 8px 12px;}
+        #context-menu { position: fixed; background: var(--bg-glass); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); border-radius: var(--border-radius); box-shadow: var(--shadow-xl); z-index: 3000; display: none; padding: 8px; min-width: 220px; }
+        .context-item { padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; border-radius: var(--border-radius-sm); }
+        .context-item:hover { background: rgba(var(--primary-rgb), 0.1); }
+        .context-item i { width: 20px; }
+        #notification { position: fixed; top: 80px; right: 24px; padding: 16px 20px; background: var(--bg-glass); backdrop-filter: var(--glass-blur); border-left: 4px solid var(--primary); border-radius: var(--border-radius); box-shadow: var(--shadow-xl); z-index: 2001; transform: translateX(calc(100% + 24px)); transition: transform 0.4s var(--spring); }
+        #notification.show { transform: translateX(0); }
+        .calculator-window .window-content { padding: 10px; background: #e0e0e0; }
+        .calc-display { background: #222; color: white; font-size: 2.5em; padding: 20px; text-align: right; border-radius: var(--border-radius-sm); margin-bottom: 10px; font-family: var(--font-family-mono); }
+        .calc-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; flex: 1; }
+        .calc-buttons button { padding: 20px; font-size: 1.5em; border: none; border-radius: var(--border-radius-sm); cursor: pointer; background: #f0f0f0; }
+        .calc-buttons button.operator { background: var(--accent); color: white; }
+        .calc-buttons button.equal { background: var(--success); color: white; grid-column: span 2; }
+        .settings-window .window-content { padding: 20px; overflow-y: auto; background: #f0f0f0; }
+        .settings-section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #ddd; }
+        .settings-section:last-child { border-bottom: none; }
+        .settings-section h3 { margin-bottom: 15px; }
+        .settings-section input[type="text"] { width: 100%; padding: 8px; margin-bottom: 10px; }
+        .settings-section button { padding: 8px 12px; }
+        #bg-options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        .bg-option { aspect-ratio: 16/9; background-size: cover; border-radius: 8px; cursor: pointer; border: 2px solid transparent; }
+        .bg-option.selected { border-color: var(--primary); }
+        .clock-window .window-content { padding: 0; background-color: #f0f0f0; }
+        .clock-tabs { display: flex; background: #e0e0e0; }
+        .clock-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-bottom: 2px solid transparent; }
+        .clock-tab.active { border-bottom-color: var(--primary); }
+        .clock-panel { display: none; padding: 20px; }
+        .clock-panel.active { display: block; }
+        #clock-display { font-size: 4em; text-align: center; font-family: var(--font-family-mono); }
+        #date-display { text-align: center; font-size: 1.2em; }
+        .timer-display, .timer-inputs { text-align: center; }
+        .timer-display, .timer-inputs input { font-size: 2.5em; font-family: var(--font-family-mono); width: 80px; text-align: center; background: #fff; border: 1px solid #ccc; border-radius: 4px; }
+        .timer-controls button, .alarm-form button { font-size: 1em; padding: 10px 15px; margin: 10px 5px; }
+        #alarms-list { margin-top: 20px; }
+        .alarm-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #fff; border-radius: 8px; margin-bottom: 10px; }
+        #alarm-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-overlay); z-index: 9999; display: none; align-items: center; justify-content: center; }
+        #alarm-modal-content { background: var(--bg-surface); color: var(--text-light); padding: 40px; border-radius: var(--border-radius); text-align: center; }
+        #alarm-modal-content i { font-size: 48px; color: var(--warning); }
+        #alarm-modal-content h2 { margin: 20px 0; }
+        #alarm-stop-btn { background: var(--error); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        .image-viewer-content { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; padding: 10px; background: #333; }
+        .image-viewer-content img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .music-player-content { padding: 20px; text-align: center; background: #f0f0f0; }
+        .music-player-content #song-title { margin: 15px 0; font-size: 1.2em; }
+        .music-player-content .controls button { font-size: 2em; background: none; border: none; cursor: pointer; margin: 0 15px; }
+        .music-player-content .custom-track-form { display: flex; gap: 10px; margin-top: 15px; }
+        .music-player-content .custom-track-form input { flex: 1; padding: 8px; }
+        .music-player-content .playlist-form { border-top: 1px solid #ccc; margin-top: 15px; padding-top: 15px; }
+        .music-player-content .playlist-form p { font-size: 0.9em; margin-bottom: 10px; }
+        .help-window .window-content { overflow-y: auto; padding: 20px; line-height: 1.6; }
+        .help-window .window-content h2 { color: var(--primary); margin-bottom: 10px; }
+        .help-window .window-content h3 { margin-top: 20px; margin-bottom: 5px; }
+        .help-window .window-content ul { padding-left: 20px; }
+        .help-window .window-content code { background: #e0e0e0; padding: 2px 4px; border-radius: 4px; }
+        .help-window .window-content table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .help-window .window-content th, .help-window .window-content td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        .terminal-content { background: #000; color: #0f0; font-family: var(--font-family-mono); padding: 10px; height: 100%; overflow-y: auto; white-space: pre-wrap; }
+        .terminal-input-line { display: flex; }
+        .terminal-prompt { white-space: pre; }
+        .terminal-input { flex: 1; background: none; border: none; color: #0f0; font-family: var(--font-family-mono); outline: none; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-track { background: rgba(var(--primary-rgb), 0.05); } ::-webkit-scrollbar-thumb { background: rgba(var(--primary-rgb), 0.4); border-radius: var(--border-radius-sm); }
     </style>
 </head>
 <body>
-    <div id="desktop"></div>
-    
+    <div id="loading-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; z-index: 10000; transition: opacity 0.5s ease-out;"></div>
+    <div id="desktop"><div id="desktop-icons"></div></div>
     <div id="top-controls">
-        <button class="control-btn" id="bookmarks-btn" aria-label="Bookmarks">
-            <i class="ri-bookmark-line"></i>
-            <span>Bookmarks</span>
-        </button>
-        <button class="control-btn" id="home-btn" aria-label="Home">
-            <i class="ri-home-4-line"></i>
-            <span>Home</span>
-        </button>
-        <button class="control-btn" id="theme-btn" aria-label="Toggle Theme">
-            <i class="ri-contrast-2-line"></i>
-            <span>Theme</span>
-        </button>
-        
-        <div id="url-container">
-            <input type="text" id="url-input" placeholder="Enter URL (e.g. https://example.com)" aria-label="Website URL">
-            <button id="go-btn">GO</button>
-        </div>
-
-        <div id="system-info">
-            <div id="clock">12:00 PM</div>
-        </div>
+        <button class="control-btn" id="bookmarks-btn" title="Bookmarks"><i class="ri-bookmark-line"></i></button>
+        <button class="control-btn" id="home-btn" title="Home"><i class="ri-home-4-line"></i></button>
+        <div id="url-container"><input type="text" id="url-input" placeholder="Enter URL..."><button id="go-btn">GO</button></div>
+        <div id="system-info"><div id="clock"></div></div>
     </div>
-    
     <div id="taskbar">
-        <button id="start-btn">
-            <i class="ri-apps-line"></i>
-            <span>Start</span>
-        </button>
-        <div id="taskbar-apps">
-            </div>
+        <button id="start-btn"><i class="ri-apps-line"></i><span>Start</span></button>
+        <div id="taskbar-apps"></div>
     </div>
-    
     <div id="bookmarks-overlay">
-        <button id="close-bookmarks" aria-label="Close bookmarks"><i class="ri-close-line"></i></button>
-        <h2 style="color: var(--primary); margin-bottom: 20px;">Bookmarks</h2>
+        <button id="close-bookmarks" aria-label="Close bookmarks" style="position: absolute; top: 20px; right: 20px; background: var(--error); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 20px;"><i class="ri-close-line"></i></button>
+        <h2 style="color: var(--primary); margin-bottom: 20px; flex-shrink: 0; width: 100%; text-align: center;">Bookmarks</h2>
         <div id="bookmarks-container">
-            <div class="bookmark-category">
-                <h3><i class="ri-movie-line"></i> Animation</h3>
-                <div class="bookmark-item" data-url="https://www.crunchyroll.com/">
-                    <i class="ri-links-line"></i> Crunchyroll
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-                <div class="bookmark-item" data-url="https://www.tubitv.com/category/anime">
-                    <i class="ri-links-line"></i> Tubi TV Anime
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-                <div class="bookmark-item" data-url="https://www.pluto.tv/live-tv/pluto-tv-anime">
-                    <i class="ri-links-line"></i> Pluto TV Anime
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-                <div class="bookmark-item" data-url="https://www.hidive.com/">
-                    <i class="ri-links-line"></i> HIDIVE
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-            </div>
-            
-            <div class="bookmark-category">
-                <h3><i class="ri-book-open-line"></i> Reading</h3>
-                <div class="bookmark-item" data-url="https://mangaplus.shueisha.co.jp/">
-                    <i class="ri-links-line"></i> Manga Plus
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-                <div class="bookmark-item" data-url="https://www.viz.com/shonenjump">
-                    <i class="ri-links-line"></i> Shonen Jump
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-                <div class="bookmark-item" data-url="https://www.webtoons.com/">
-                    <i class="ri-links-line"></i> Webtoon
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-                <div class="bookmark-item" data-url="https://gutenberg.org/">
-                    <i class="ri-links-line"></i> Project Gutenberg
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-            </div>
-            
-            <div class="bookmark-category">
-                <h3><i class="ri-video-line"></i> Video</h3>
-                <div class="bookmark-item" data-url="https://www.tubitv.com/">
-                    <i class="ri-links-line"></i> Tubi TV
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-                <div class="bookmark-item" data-url="https://www.pluto.tv/">
-                    <i class="ri-links-line"></i> Pluto TV
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-                <div class="bookmark-item" data-url="https://www.crackle.com/">
-                    <i class="ri-links-line"></i> Crackle
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-                <div class="bookmark-item" data-url="https://www.youtube.com/free">
-                    <i class="ri-links-line"></i> YouTube Free
-                    <button class="bookmark-delete" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                </div>
-            </div>
-            
-            <div class="bookmark-category" id="custom-bookmarks">
+            <div class="select-container"> <i class="ri-brain-line"></i> <select class="bookmark-select">
+                <option value="">Brain Tease</option> <option value="https://www.mindgames.com/">Mind Games</option> <option value="https://www.brainzilla.com/">Brainzilla</option> <option value="https://www.puzzleprime.com/">Puzzle Prime</option>
+            </select> </div>
+            <div class="select-container"> <i class="ri-movie-line"></i> <select class="bookmark-select">
+                <option value="">Animation</option> <option value="https://www.anitube.news/">Anitube</option> <option value="https://aniwatchtv.to/">AniWatch</option> <option value="https://aniwave.se/">AniWave</option>
+            </select> </div>
+            <div class="select-container"> <i class="ri-book-open-line"></i> <select class="bookmark-select">
+                <option value="">Readable</option> <option value="https://www.mangahere.cc/">MangaHere</option> <option value="https://www.manhwaden.com/">Manhwaden</option> <option value="https://readcomiconline.li/">ReadComicOnline</option> <option value="https://gutenberg.org/">Project Gutenberg</option> <option value="https://en.readanybook.com/">READanyBOOK</option> <option value="https://readallcomics.com/">ReadAllComics</option> <option value="https://www.theblackvault.com/documentarchive/">TheBlackVault</option>
+            </select> </div>
+            <div class="select-container"> <i class="ri-video-line"></i> <select class="bookmark-select">
+                <option value="">Watchable</option> <option value="https://tv.garden">Free Worldwide TV</option> <option value="https://flixer.su/">Flixer</option> <option value="https://www.couchtuner.show/">CouchTuner</option> <option value="https://moviedb.wiki/">Movie DB</option> <option value="https://www.hydraflix.vip/">HydraFlix</option> <option value="https://watchseries.bar/">WatchSeries</option> <option value="https://nflsupport.com/">Sports</option>
+            </select> </div>
+            <div class="select-container"> <i class="ri-calendar-line"></i> <select class="bookmark-select">
+                <option value="">Dailies</option> <option value="https://term.ooo/">Termo</option> <option value="https://bandle.app/daily">Bandle</option> <option value="https://wordleplay.com/waffle">Waffle</option> <option value="https://musicle.app">Musicle</option>
+            </select> </div>
+            <div id="custom-bookmarks">
                 <h3><i class="ri-user-star-line"></i> My Bookmarks</h3>
-                <div id="custom-bookmarks-list">
-                    </div>
-                <div id="add-bookmark-form">
-                    <input type="text" id="new-bookmark-url" placeholder="URL (https://...)" aria-label="Bookmark URL">
-                    <input type="text" id="new-bookmark-name" placeholder="Name" aria-label="Bookmark name">
-                    <button id="add-bookmark-btn"><i class="ri-add-line"></i> Add</button>
-                </div>
+                <div class="bookmark-list" id="custom-bookmarks-list"></div>
+                <form id="add-bookmark-form"><input type="text" id="new-bookmark-name" placeholder="Name" required><input type="text" id="new-bookmark-url" placeholder="URL" required><button type="submit" id="add-bookmark-btn">+</button></form>
             </div>
         </div>
     </div>
-    
-    <div id="context-menu">
-        <div id="start-menu-time"></div> <div class="context-item" id="ctx-new-window"><i class="ri-window-line"></i> New Window</div>
-        <div class="context-item" id="ctx-notes-hub"><i class="ri-sticky-note-line"></i> Notes Hub</div> <div class="context-item" id="ctx-alarm"><i class="ri-alarm-line"></i> Alarm</div>
-        <div class="context-item" id="ctx-change-bg"><i class="ri-image-line"></i> Change Background</div>
-        <hr style="border: none; height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;">
-        <div class="context-item" id="ctx-bookmarks"><i class="ri-bookmark-line"></i> Bookmarks</div>
-        <div class="context-item" id="ctx-refresh"><i class="ri-refresh-line"></i> Refresh</div>
+    <div id="context-menu"></div>
+    <div id="notification"></div>
+    <div id="selection-box"></div>
+    <div id="alarm-modal">
+        <div id="alarm-modal-content">
+            <i class="ri-alarm-warning-line"></i>
+            <h2>Alarm!</h2>
+            <button id="alarm-stop-btn">Stop</button>
+        </div>
     </div>
-    
-    <div id="notification" class="notification"></div>
-
-    <audio id="alarm-sound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" type="audio/mpeg">
-    </audio>
-
+    <audio id="alarm-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" preload="auto" loop></audio>
+    <audio id="music-player-audio"></audio>
     <script>
-        (function(projLib) {
-            'use strict';
-            
-            // Configuration
-            const config = {
-                defaultUrl: "https://archive.org",
-                defaultWindowSize: { width: 800, height: 600 },
-                backgroundOptions: [
-                    {
-                        name: "Cyberpunk",
-                        url: "https://images.unsplash.com/photo-1639762681057-408e52192e55?q=80&w=2232&auto=format&fit=crop"
-                    },
-                    {
-                        name: "Nature",
-                        url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2940&auto=format&fit=crop"
-                    },
-                    {
-                        name: "Space",
-                        url: "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?q=80&w=2980&auto=format&fit=crop"
-                    },
-                    {
-                        name: "City",
-                        url: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=2944&auto=format&fit=crop"
-                    },
-                    {
-                        name: "Abstract",
-                        url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2864&auto=format&fit=crop"
-                    },
-                    {
-                        name: "Minimal",
-                        url: "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2929&auto=format&fit=crop"
-                    }
-                ]
-            };
-            
-            // DOM Elements
-            const elements = {
-                desktop: document.getElementById("desktop"),
-                urlInput: document.getElementById("url-input"),
-                goBtn: document.getElementById("go-btn"),
-                bookmarksOverlay: document.getElementById("bookmarks-overlay"),
-                bookmarksBtn: document.getElementById("bookmarks-btn"),
-                closeBookmarks: document.getElementById("close-bookmarks"),
-                homeBtn: document.getElementById("home-btn"),
-                themeBtn: document.getElementById("theme-btn"),
-                notification: document.getElementById("notification"),
-                bookmarkItems: document.querySelectorAll(".bookmark-item"),
-                customBookmarksList: document.getElementById("custom-bookmarks-list"),
-                newBookmarkUrl: document.getElementById("new-bookmark-url"),
-                newBookmarkName: document.getElementById("new-bookmark-name"),
-                addBookmarkBtn: document.getElementById("add-bookmark-btn"),
-                taskbar: document.getElementById("taskbar"),
-                taskbarApps: document.getElementById("taskbar-apps"),
-                alarmSound: document.getElementById("alarm-sound"),
-                contextMenu: document.getElementById("context-menu"),
-                clock: document.getElementById("clock"),
-                startBtn: document.getElementById("start-btn"),
-                notesHubBtn: document.getElementById("ctx-notes-hub"),
-                changeBgBtn: document.getElementById("ctx-change-bg"),
-                startMenuTime: document.getElementById("start-menu-time")
-            };
-            
-            // State management
-            let state = {
-                windows: [],
-                activeWindow: null,
-                theme: "dark", // Set to dark by default as requested
-                background: localStorage.getItem("background") || config.backgroundOptions[0].url,
-                zIndex: 100,
-                nextWindowId: 1,
-                customBookmarks: JSON.parse(localStorage.getItem("customBookmarks")) || [],
-                notes: JSON.parse(localStorage.getItem("notes")) || [],
-                alarms: JSON.parse(localStorage.getItem("alarms")) || [],
-                nextNoteId: 1,
-                nextAlarmId: 1,
-                alarmCheckInterval: null
-            };
-            
-            // Utility Functions
-            projLib.utils = {
-                isValidUrl: function(url) {
-                    try {
-                        new URL(url.startsWith("http") ? url : "https://" + url);
-                        return true;
-                    } catch {
-                        return false;
-                    }
-                },
-                
-                showNotification: function(message, type = "info", duration = 4000) {
-                    elements.notification.textContent = message;
-                    elements.notification.className = `notification show ${type}`;
-                    // Add appropriate icon based on type
-                    let icon = 'ri-information-line';
-                    if (type === 'success') icon = 'ri-checkbox-circle-line';
-                    if (type === 'error') icon = 'ri-error-warning-line';
-                    if (type === 'warning') icon = 'ri-alert-line';
-                    elements.notification.innerHTML = `<i class="${icon}"></i> ${message}`;
-                    setTimeout(() => {
-                        elements.notification.classList.remove("show");
-                    }, duration);
-                },
-                
-                getRandomPosition: function() {
-                    const maxX = window.innerWidth - config.defaultWindowSize.width;
-                    const maxY = window.innerHeight - config.defaultWindowSize.height - 50;
-                    return { x: Math.max(0, Math.floor(Math.random() * maxX)), y: Math.max(50, Math.floor(Math.random() * maxY)) };
-                },
-                
-                makeDraggable: function(element, handle) {
-                    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-                    handle.onmousedown = dragMouseDown;
-                    function dragMouseDown(e) {
-                        e = e || window.event;
-                        e.preventDefault();
-                        pos3 = e.clientX;
-                        pos4 = e.clientY;
-                        document.onmouseup = closeDragElement;
-                        document.onmousemove = elementDrag;
-                        element.style.transition = 'none'; // Disable transition during drag
-                    }
-                    function elementDrag(e) {
-                        e = e || window.event;
-                        e.preventDefault();
-                        pos1 = pos3 - e.clientX;
-                        pos2 = pos4 - e.clientY;
-                        pos3 = e.clientX;
-                        pos4 = e.clientY;
-                        let newTop = element.offsetTop - pos2;
-                        let newLeft = element.offsetLeft - pos1;
-                        newTop = Math.max(40, Math.min(newTop, window.innerHeight - 40));
-                        newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - 40));
-                        element.style.top = newTop + "px";
-                        element.style.left = newLeft + "px";
-                    }
-                    function closeDragElement() {
-                        document.onmouseup = null;
-                        document.onmousemove = null;
-                        element.style.transition = ''; // Re-enable transition
-                    }
-                },
-                
-                saveCustomBookmarks: function() {
-                    localStorage.setItem("customBookmarks", JSON.stringify(state.customBookmarks));
-                },
-                
-                saveNotes: function() {
-                    localStorage.setItem("notes", JSON.stringify(state.notes));
-                },
-                
-                saveAlarms: function() {
-                    localStorage.setItem("alarms", JSON.stringify(state.alarms));
-                },
-                
-                extractDomain: function(url) {
-                    try {
-                        const domain = new URL(url.startsWith("http") ? url : "https://" + url).hostname.replace('www.', '');
-                        return domain.charAt(0).toUpperCase() + domain.slice(1);
-                    } catch {
-                        return "Custom Site";
-                    }
-                },
-                
-                updateTaskbar: function() {
-                    elements.taskbarApps.innerHTML = "";
-                    state.windows.forEach(window => {
-                        const taskbarItem = document.createElement("button");
-                        taskbarItem.className = "taskbar-item";
-                        if (window.id === state.activeWindow) {
-                            taskbarItem.classList.add("active");
-                        }
-                        if (window.isMinimized) {
-                            taskbarItem.style.opacity = "0.7";
-                        }
-                        let iconClass = 'ri-window-line';
-                        if (window.type === 'notes') iconClass = 'ri-sticky-note-line';
-                        if (window.type === 'notes-hub') iconClass = 'ri-sticky-note-line';
-                        if (window.type === 'alarm') iconClass = 'ri-alarm-line';
-                        if (window.type === 'background') iconClass = 'ri-image-line';
-                        taskbarItem.innerHTML = `
-                            <i class="${iconClass}"></i>
-                            <span>${window.title}</span>
-                        `;
-                        taskbarItem.addEventListener("click", () => {
-                            if (window.isMinimized) {
-                                projLib.windows.restore(window.id);
-                            } else {
-                                projLib.windows.activate(window.id);
-                            }
-                        });
-                        elements.taskbarApps.appendChild(taskbarItem);
-                    });
-                },
+    (function(miniOS) {
+        'use strict';
+        
+        const config = {
+            defaultUrl: "https://archive.org",
+            defaultWindowSize: { width: 800, height: 600 },
+            backgroundOptions: [
+                { name: "Cyberpunk", url: "https://images.unsplash.com/photo-1639762681057-408e52192e55?q=80&w=2232&auto=format&fit=crop" },
+                { name: "Nature", url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2940&auto=format&fit=crop" },
+                { name: "Space", url: "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?q=80&w=2980&auto=format&fit=crop" },
+            ],
+            gridSize: 100, // For desktop icon snapping
+        };
 
-                // New function to update the start menu timer
-                updateStartMenuTime: function() {
-                    if (elements.startMenuTime) {
-                        const now = new Date();
-                        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-                        elements.startMenuTime.textContent = timeString;
-                    }
-                },
-                
-                formatTime: function(date) {
-                    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                },
-                
-                updateClock: function() {
-                    if (elements.clock) {
-                        elements.clock.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-                    }
-                },
-                
-                checkAlarms: function() {
-                    const now = new Date();
-                    const currentTime = now.getHours() * 60 + now.getMinutes();
-                    state.alarms.forEach(alarm => {
-                        if (!alarm.triggered && alarm.time === currentTime) {
-                            this.triggerAlarm(alarm);
-                        }
-                    });
-                },
-                
-                triggerAlarm: function(alarm) {
-                    elements.alarmSound.currentTime = 0;
-                    elements.alarmSound.play();
-                    this.showNotification(`Alarm: ${alarm.name}`, 'warning', 10000);
-                    alarm.triggered = true;
-                    this.saveAlarms();
-                    const alarmWindow = state.windows.find(w => w.type === 'alarm');
-                    if (alarmWindow) {
-                        const alarmList = alarmWindow.element.querySelector('.alarms-list');
-                        if (alarmList) {
-                            const alarmItem = alarmList.querySelector(`[data-id="${alarm.id}"]`);
-                            if (alarmItem) {
-                                alarmItem.style.background = 'rgba(239, 68, 68, 0.2)';
-                                const statusSpan = alarmItem.querySelector('.alarm-status');
-                                if (statusSpan) {
-                                    statusSpan.textContent = 'Triggered';
-                                }
-                            }
-                        }
-                    }
-                },
-                
-                showContextMenu: function(e) {
-                    e.preventDefault();
-                    elements.contextMenu.style.display = 'block';
-                    elements.contextMenu.style.left = e.pageX + 'px';
-                    elements.contextMenu.style.top = e.pageY + 'px';
-                    const hideMenu = function() {
-                        elements.contextMenu.style.display = 'none';
-                        document.removeEventListener('click', hideMenu);
-                    };
-                    setTimeout(() => {
-                        document.addEventListener('click', hideMenu);
-                    }, 100);
+        const defaultDesktopItems = {
+            'File Explorer': { type: 'app', appId: 'explorer', icon: 'ri-folder-line' },
+            'Settings': { type: 'app', appId: 'settings', icon: 'ri-settings-3-line' },
+            'Calculator': { type: 'app', appId: 'calculator', icon: 'ri-calculator-line' },
+            'Clock': { type: 'app', appId: 'clock', icon: 'ri-time-line' },
+            'Terminal': { type: 'app', appId: 'terminal', icon: 'ri-terminal-box-line'},
+            'Music Player': { type: 'app', appId: 'music', icon: 'ri-music-2-line'},
+            'Help': { type: 'app', appId: 'help', icon: 'ri-question-line'},
+            'Bookmarks': { type: 'app', appId: 'bookmarks', icon: 'ri-bookmarks-3-fill'},
+            'Welcome.txt': { type: 'file', content: 'Welcome to your Mini OS!\n\nTo get started, right-click on the desktop for options like creating new files and folders.\n\nFor a full guide on all the features, open the "Help" application from the desktop or Start Menu.' },
+            'Images': { type: 'folder', children: { 
+                'cyber-cat.jpg': { type: 'file', content: 'https://i.pinimg.com/originals/44/1a/c9/441ac90467439745d3163689cc5943a9.jpg' }
+            }},
+            'Music': { type: 'folder', children: {
+                'lofi-beat.mp3': { type: 'file', content: 'https://cdn.pixabay.com/download/audio/2022/02/07/audio_c6b9b8d96e.mp3' }
+            }}
+        };
+
+        const elements = {
+            desktop: document.getElementById("desktop"),
+            desktopIcons: document.getElementById("desktop-icons"),
+            selectionBox: document.getElementById("selection-box"),
+            urlInput: document.getElementById("url-input"),
+            goBtn: document.getElementById("go-btn"),
+            bookmarksBtn: document.getElementById("bookmarks-btn"),
+            closeBookmarks: document.getElementById("close-bookmarks"),
+            homeBtn: document.getElementById("home-btn"),
+            taskbarApps: document.getElementById("taskbar-apps"),
+            clock: document.getElementById("clock"),
+            startBtn: document.getElementById("start-btn"),
+            contextMenu: document.getElementById("context-menu"),
+            notification: document.getElementById("notification"),
+            bookmarksOverlay: document.getElementById("bookmarks-overlay"),
+            customBookmarksList: document.getElementById("custom-bookmarks-list"),
+            addBookmarkForm: document.getElementById("add-bookmark-form"),
+            alarmSound: document.getElementById("alarm-sound"),
+            alarmModal: document.getElementById("alarm-modal"),
+            alarmStopBtn: document.getElementById("alarm-stop-btn"),
+            musicPlayerAudio: document.getElementById("music-player-audio"),
+        };
+
+        let initialFileSystem = JSON.parse(localStorage.getItem("fileSystem"));
+        if (!initialFileSystem) {
+            initialFileSystem = {
+                'Desktop': { type: 'folder', children: JSON.parse(JSON.stringify(defaultDesktopItems)) }
+            };
+        }
+
+        let state = {
+            windows: [], activeWindow: null, zIndex: 100, nextWindowId: 1,
+            background: localStorage.getItem("background") || config.backgroundOptions[0].url,
+            bookmarks: JSON.parse(localStorage.getItem("bookmarks")) || [],
+            alarms: JSON.parse(localStorage.getItem("alarms")) || [],
+            fileSystem: initialFileSystem,
+            iconPositions: JSON.parse(localStorage.getItem("iconPositions")) || {},
+            selectedIcons: new Set(), isDragging: false, isRenaming: false,
+        };
+
+        const utils = {
+            showNotification: (message, type = "info") => {
+                elements.notification.textContent = message;
+                elements.notification.className = `notification show ${type}`;
+                setTimeout(() => elements.notification.classList.remove("show"), 4000);
+            },
+            updateClock: () => { if (elements.clock) elements.clock.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); },
+            saveState: () => {
+                localStorage.setItem("fileSystem", JSON.stringify(state.fileSystem));
+                localStorage.setItem("iconPositions", JSON.stringify(state.iconPositions));
+                localStorage.setItem("background", state.background);
+                localStorage.setItem("bookmarks", JSON.stringify(state.bookmarks));
+                localStorage.setItem("alarms", JSON.stringify(state.alarms));
+            },
+            getIconForFile: (name, item) => {
+                if (item.type === 'link') return 'ri-chrome-fill';
+                const ext = name.split('.').pop().toLowerCase();
+                if (ext === name) return 'ri-file-text-line';
+                switch (ext) {
+                    case 'txt': return 'ri-file-text-line';
+                    case 'jpg': case 'jpeg': case 'png': case 'gif': return 'ri-image-line';
+                    case 'mp3': case 'wav': case 'ogg': return 'ri-file-music-line';
+                    case 'zip': case 'rar': return 'ri-file-zip-line';
+                    case 'js': case 'html': case 'css': return 'ri-file-code-line';
+                    default: return 'ri-file-line';
                 }
-            };
-            
-            // Window Management
-            projLib.windows = {
-                create: function(url, title = "New Window", type = "browser", content = null) {
-                    if (type === "notes") {
-                        return this.createNotesWindow(title, content);
-                    } else if (type === "notes-hub") {
-                        return this.createNotesHubWindow();
-                    } else if (type === "alarm") {
-                        return this.createAlarmWindow();
-                    } else if (type === "background") {
-                        return this.createBackgroundWindow();
-                    }
-                    if (!projLib.utils.isValidUrl(url)) {
-                        projLib.utils.showNotification("Please enter a valid URL (e.g. https://example.com)", "error");
-                        return;
-                    }
-                    if (!url.startsWith("http")) {
-                        url = "https://" + url;
-                    }
-                    const windowId = state.nextWindowId++;
-                    const pos = projLib.utils.getRandomPosition();
-                    const windowElement = document.createElement("div");
-                    windowElement.className = "window";
-                    windowElement.id = `window-${windowId}`;
-                    windowElement.style.width = `${config.defaultWindowSize.width}px`;
-                    windowElement.style.height = `${config.defaultWindowSize.height}px`;
-                    windowElement.style.top = `${pos.y}px`;
-                    windowElement.style.left = `${pos.x}px`;
-                    windowElement.style.zIndex = state.zIndex++;
-                    windowElement.setAttribute("aria-label", `${title} window`);
-                    windowElement.innerHTML = `
-                        <div class="window-header">
-                            <div class="window-title">
-                                <i class="ri-window-line"></i> ${title}
-                            </div>
-                            <div class="window-controls">
-                                <div class="window-control window-refresh" aria-label="Refresh"><i class="ri-refresh-line"></i></div>
-                                <div class="window-control window-minimize" aria-label="Minimize">−</div>
-                                <div class="window-control window-maximize" aria-label="Maximize">□</div>
-                                <div class="window-control window-fullscreen" aria-label="Fullscreen">⛶</div>
-                                <div class="window-control window-close" aria-label="Close">×</div>
-                            </div>
-                        </div>
-                        <iframe class="window-content" src="${url}" title="${title}" loading="eager"></iframe>
-                    `;
-                    elements.desktop.appendChild(windowElement);
-                    projLib.utils.makeDraggable(windowElement, windowElement.querySelector(".window-header"));
-                    const closeBtn = windowElement.querySelector(".window-close");
-                    const minimizeBtn = windowElement.querySelector(".window-minimize");
-                    const maximizeBtn = windowElement.querySelector(".window-maximize");
-                    const fullscreenBtn = windowElement.querySelector(".window-fullscreen");
-                    const refreshBtn = windowElement.querySelector(".window-refresh");
-                    closeBtn.addEventListener("click", () => this.close(windowId));
-                    minimizeBtn.addEventListener("click", () => this.minimize(windowId));
-                    maximizeBtn.addEventListener("click", () => this.maximize(windowId));
-                    fullscreenBtn.addEventListener("click", () => this.toggleFullscreen(windowId));
-                    refreshBtn.addEventListener("click", () => this.refresh(windowId));
-                    windowElement.addEventListener("mousedown", () => this.activate(windowId));
-                    windowElement.addEventListener("contextmenu", projLib.utils.showContextMenu);
-                    const windowObj = {
-                        id: windowId,
-                        element: windowElement,
-                        url: url,
-                        title: title,
-                        type: type,
-                        isMinimized: false,
-                        isMaximized: false,
-                        isFullscreen: false,
-                        originalSize: { width: config.defaultWindowSize.width, height: config.defaultWindowSize.height },
-                        originalPosition: { x: pos.x, y: pos.y }
-                    };
-                    state.windows.push(windowObj);
-                    state.activeWindow = windowId;
-                    projLib.utils.updateTaskbar();
-                    return windowId;
-                },
-                
-                // Refresh the iframe content
-                refresh: function(windowId) {
-                    const windowObj = state.windows.find(w => w.id === windowId);
-                    if (windowObj && windowObj.type === "browser") {
-                        const iframe = windowObj.element.querySelector("iframe");
-                        if (iframe) {
-                            iframe.src = iframe.src; // Reload the iframe
-                            projLib.utils.showNotification("Page refreshed", "info");
-                        }
-                    }
-                },
-                
-                createNotesWindow: function(title = "Untitled Note", noteId = null) {
-                    let note = state.notes.find(n => n.id === noteId);
-                    if (!note) {
-                        noteId = state.nextNoteId++;
-                        note = { id: noteId, title: title, content: "" };
-                        state.notes.push(note);
-                        projLib.utils.saveNotes();
-                    }
-                    
-                    const windowId = state.nextWindowId++;
-                    const pos = projLib.utils.getRandomPosition();
-                    const windowElement = document.createElement("div");
-                    windowElement.className = "window notes-window";
-                    windowElement.id = `window-${windowId}`;
-                    windowElement.dataset.noteId = noteId;
-                    windowElement.style.width = "400px";
-                    windowElement.style.height = "500px";
-                    windowElement.style.top = `${pos.y}px`;
-                    windowElement.style.left = `${pos.x}px`;
-                    windowElement.style.zIndex = state.zIndex++;
-                    windowElement.setAttribute("aria-label", `${note.title} note window`);
-                    
-                    windowElement.innerHTML = `
-                        <div class="window-header">
-                            <div class="window-title">
-                                <i class="ri-sticky-note-line"></i> <span contenteditable="true" class="note-title-editable">${note.title}</span>
-                            </div>
-                            <div class="window-controls">
-                                <div class="window-control window-minimize" aria-label="Minimize">−</div>
-                                <div class="window-control window-maximize" aria-label="Maximize">□</div>
-                                <div class="window-control window-fullscreen" aria-label="Fullscreen">⛶</div>
-                                <div class="window-control window-close" aria-label="Close">×</div>
-                            </div>
-                        </div>
-                        <div class="window-content">
-                            <div class="notes-toolbar">
-                                <button data-command="bold" aria-label="Bold"><i class="ri-bold"></i></button>
-                                <button data-command="italic" aria-label="Italic"><i class="ri-italic"></i></button>
-                                <button data-command="underline" aria-label="Underline"><i class="ri-underline"></i></button>
-                                <button data-command="insertUnorderedList" aria-label="Bullet list"><i class="ri-list-unordered"></i></button>
-                                <button data-command="insertOrderedList" aria-label="Numbered list"><i class="ri-list-ordered"></i></button>
-                                <button data-command="formatBlock" data-format='<h2>' aria-label="Heading"><i class="ri-heading"></i></button>
-                                <button data-command="createLink" aria-label="Insert link" id="notes-insert-link"><i class="ri-link"></i></button>
-                            </div>
-                            <div class="notes-content" contenteditable="true" aria-label="Note content">${note.content}</div>
-                        </div>
-                    `;
-                    elements.desktop.appendChild(windowElement);
-                    projLib.utils.makeDraggable(windowElement, windowElement.querySelector(".window-header"));
-                    
-                    const noteContent = windowElement.querySelector('.notes-content');
-                    const noteTitle = windowElement.querySelector('.note-title-editable');
-
-                    // Save note on input
-                    noteContent.addEventListener('input', () => {
-                        note.content = noteContent.innerHTML;
-                        projLib.utils.saveNotes();
-                    });
-                    
-                    noteTitle.addEventListener('input', () => {
-                        note.title = noteTitle.textContent;
-                        windowElement.querySelector('.window-title').childNodes[2].textContent = note.title;
-                        projLib.utils.saveNotes();
-                        projLib.utils.updateTaskbar();
-                    });
-
-                    // Add toolbar functionality
-                    windowElement.querySelectorAll('.notes-toolbar button').forEach(button => {
-                        button.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const command = button.dataset.command;
-                            if (command === 'createLink') {
-                                const url = prompt("Enter URL:");
-                                if (url) {
-                                    document.execCommand(command, false, url);
-                                }
-                            } else if (command === 'formatBlock') {
-                                document.execCommand(command, false, button.dataset.format);
-                            } else {
-                                document.execCommand(command);
-                            }
-                            noteContent.focus();
-                        });
-                    });
-                    
-                    const closeBtn = windowElement.querySelector(".window-close");
-                    const minimizeBtn = windowElement.querySelector(".window-minimize");
-                    const maximizeBtn = windowElement.querySelector(".window-maximize");
-                    const fullscreenBtn = windowElement.querySelector(".window-fullscreen");
-                    closeBtn.addEventListener("click", () => this.close(windowId));
-                    minimizeBtn.addEventListener("click", () => this.minimize(windowId));
-                    maximizeBtn.addEventListener("click", () => this.maximize(windowId));
-                    fullscreenBtn.addEventListener("click", () => this.toggleFullscreen(windowId));
-                    windowElement.addEventListener("mousedown", () => this.activate(windowId));
-                    windowElement.addEventListener("contextmenu", projLib.utils.showContextMenu);
-                    
-                    const windowObj = {
-                        id: windowId,
-                        element: windowElement,
-                        title: note.title,
-                        type: "notes",
-                        noteId: noteId,
-                        isMinimized: false,
-                        isMaximized: false,
-                        isFullscreen: false,
-                        originalSize: { width: 400, height: 500 },
-                        originalPosition: { x: pos.x, y: pos.y }
-                    };
-                    state.windows.push(windowObj);
-                    state.activeWindow = windowId;
-                    projLib.utils.updateTaskbar();
-                    return windowId;
-                },
-                
-                // New function to create the notes hub
-                createNotesHubWindow: function() {
-                    const windowId = state.nextWindowId++;
-                    const pos = projLib.utils.getRandomPosition();
-                    const windowElement = document.createElement("div");
-                    windowElement.className = "window notes-hub-window";
-                    windowElement.id = `window-${windowId}`;
-                    windowElement.style.width = "400px";
-                    windowElement.style.height = "500px";
-                    windowElement.style.top = `${pos.y}px`;
-                    windowElement.style.left = `${pos.x}px`;
-                    windowElement.style.zIndex = state.zIndex++;
-                    windowElement.setAttribute("aria-label", `Notes Hub window`);
-                    
-                    windowElement.innerHTML = `
-                        <div class="window-header">
-                            <div class="window-title">
-                                <i class="ri-sticky-note-line"></i> Notes Hub
-                            </div>
-                            <div class="window-controls">
-                                <div class="window-control window-minimize" aria-label="Minimize">−</div>
-                                <div class="window-control window-close" aria-label="Close">×</div>
-                            </div>
-                        </div>
-                        <div class="window-content">
-                            <button id="new-note-btn"><i class="ri-add-line"></i> New Note</button>
-                            <div class="notes-hub-list"></div>
-                        </div>
-                    `;
-                    elements.desktop.appendChild(windowElement);
-                    
-                    const notesHubList = windowElement.querySelector('.notes-hub-list');
-                    const newNoteBtn = windowElement.querySelector('#new-note-btn');
-                    
-                    const renderNotesList = () => {
-                        notesHubList.innerHTML = '';
-                        state.notes.forEach(note => {
-                            const noteItem = document.createElement('div');
-                            noteItem.className = 'notes-hub-item';
-                            noteItem.innerHTML = `
-                                <span class="notes-hub-item-title">${note.title || "Untitled Note"}</span>
-                                <div class="notes-hub-actions">
-                                    <button class="delete-note-btn" data-id="${note.id}" aria-label="Delete note"><i class="ri-delete-bin-line"></i></button>
-                                </div>
-                            `;
-                            noteItem.addEventListener('click', () => {
-                                this.createNotesWindow(note.title, note.id);
-                            });
-                            notesHubList.appendChild(noteItem);
-                        });
-                    };
-                    
-                    newNoteBtn.addEventListener('click', () => {
-                        this.createNotesWindow();
-                    });
-
-                    // Initial render and re-render on save
-                    renderNotesList();
-                    const originalSave = projLib.utils.saveNotes;
-                    projLib.utils.saveNotes = () => {
-                        originalSave();
-                        renderNotesList();
-                    };
-
-                    projLib.utils.makeDraggable(windowElement, windowElement.querySelector(".window-header"));
-                    
-                    const closeBtn = windowElement.querySelector(".window-close");
-                    const minimizeBtn = windowElement.querySelector(".window-minimize");
-                    closeBtn.addEventListener("click", () => this.close(windowId));
-                    minimizeBtn.addEventListener("click", () => this.minimize(windowId));
-                    windowElement.addEventListener("mousedown", () => this.activate(windowId));
-                    
-                    const windowObj = {
-                        id: windowId,
-                        element: windowElement,
-                        title: "Notes Hub",
-                        type: "notes-hub",
-                        isMinimized: false,
-                        isMaximized: false,
-                        isFullscreen: false,
-                        originalSize: { width: 400, height: 500 },
-                        originalPosition: { x: pos.x, y: pos.y }
-                    };
-                    state.windows.push(windowObj);
-                    state.activeWindow = windowId;
-                    projLib.utils.updateTaskbar();
-                    return windowId;
-                },
-
-                createAlarmWindow: function() {
-                    const windowId = state.nextWindowId++;
-                    const pos = projLib.utils.getRandomPosition();
-                    const windowElement = document.createElement("div");
-                    windowElement.className = "window alarm-window";
-                    windowElement.id = `window-${windowId}`;
-                    windowElement.style.width = "400px";
-                    windowElement.style.height = "500px";
-                    windowElement.style.top = `${pos.y}px`;
-                    windowElement.style.left = `${pos.x}px`;
-                    windowElement.style.zIndex = state.zIndex++;
-                    windowElement.setAttribute("aria-label", "Alarm window");
-                    windowElement.innerHTML = `
-                        <div class="window-header">
-                            <div class="window-title">
-                                <i class="ri-alarm-line"></i> Alarm
-                            </div>
-                            <div class="window-controls">
-                                <div class="window-control window-minimize" aria-label="Minimize">−</div>
-                                <div class="window-control window-close" aria-label="Close">×</div>
-                            </div>
-                        </div>
-                        <div class="window-content">
-                            <h3>Set New Alarm</h3>
-                            <div class="alarm-form">
-                                <input type="time" id="alarm-time" required>
-                                <input type="text" id="alarm-name" placeholder="Alarm Name" required>
-                                <button id="add-alarm-btn">Add Alarm</button>
-                            </div>
-                            <h3>Active Alarms</h3>
-                            <div class="alarms-list"></div>
-                        </div>
-                    `;
-                    elements.desktop.appendChild(windowElement);
-                    projLib.utils.makeDraggable(windowElement, windowElement.querySelector(".window-header"));
-
-                    const closeBtn = windowElement.querySelector(".window-close");
-                    const minimizeBtn = windowElement.querySelector(".window-minimize");
-                    closeBtn.addEventListener("click", () => this.close(windowId));
-                    minimizeBtn.addEventListener("click", () => this.minimize(windowId));
-                    windowElement.addEventListener("mousedown", () => this.activate(windowId));
-
-                    const addAlarmBtn = windowElement.querySelector("#add-alarm-btn");
-                    const alarmTimeInput = windowElement.querySelector("#alarm-time");
-                    const alarmNameInput = windowElement.querySelector("#alarm-name");
-                    const alarmsList = windowElement.querySelector(".alarms-list");
-
-                    const renderAlarms = () => {
-                        alarmsList.innerHTML = '';
-                        state.alarms.forEach(alarm => {
-                            const alarmItem = document.createElement('div');
-                            alarmItem.className = 'alarm-item';
-                            alarmItem.dataset.id = alarm.id;
-                            const timeParts = [Math.floor(alarm.time / 60), alarm.time % 60];
-                            const formattedTime = timeParts.map(part => part.toString().padStart(2, '0')).join(':');
-                            const status = alarm.triggered ? 'Triggered' : 'Active';
-                            alarmItem.innerHTML = `
-                                <div>
-                                    <strong>${alarm.name}</strong><br>
-                                    <span style="font-size: 1.2em;">${formattedTime}</span><br>
-                                    <span class="alarm-status">${status}</span>
-                                </div>
-                                <button class="delete-alarm-btn" data-id="${alarm.id}">Delete</button>
-                            `;
-                            alarmsList.appendChild(alarmItem);
-                        });
-                        projLib.utils.saveAlarms();
-                    };
-
-                    addAlarmBtn.addEventListener('click', () => {
-                        const time = alarmTimeInput.value;
-                        const name = alarmNameInput.value || "Alarm";
-                        if (time) {
-                            const [hours, minutes] = time.split(':').map(Number);
-                            const totalMinutes = hours * 60 + minutes;
-                            const newAlarm = {
-                                id: state.nextAlarmId++,
-                                name: name,
-                                time: totalMinutes,
-                                triggered: false
-                            };
-                            state.alarms.push(newAlarm);
-                            renderAlarms();
-                            projLib.utils.showNotification("Alarm added!", "success");
-                            alarmTimeInput.value = '';
-                            alarmNameInput.value = '';
-                        }
-                    });
-
-                    alarmsList.addEventListener('click', (e) => {
-                        if (e.target.classList.contains('delete-alarm-btn')) {
-                            const alarmId = parseInt(e.target.dataset.id);
-                            state.alarms = state.alarms.filter(a => a.id !== alarmId);
-                            renderAlarms();
-                            projLib.utils.showNotification("Alarm deleted", "info");
-                        }
-                    });
-
-                    renderAlarms();
-                    
-                    const windowObj = {
-                        id: windowId,
-                        element: windowElement,
-                        title: "Alarm",
-                        type: "alarm",
-                        isMinimized: false,
-                        isMaximized: false,
-                        isFullscreen: false,
-                        originalSize: { width: 400, height: 500 },
-                        originalPosition: { x: pos.x, y: pos.y }
-                    };
-                    state.windows.push(windowObj);
-                    state.activeWindow = windowId;
-                    projLib.utils.updateTaskbar();
-                    return windowId;
-                },
-
-                // Create the background selector window
-                createBackgroundWindow: function() {
-                    const windowId = state.nextWindowId++;
-                    const pos = projLib.utils.getRandomPosition();
-                    const windowElement = document.createElement("div");
-                    windowElement.className = "window bg-selector-window";
-                    windowElement.id = `window-${windowId}`;
-                    windowElement.style.width = "600px";
-                    windowElement.style.height = "500px";
-                    windowElement.style.top = `${pos.y}px`;
-                    windowElement.style.left = `${pos.x}px`;
-                    windowElement.style.zIndex = state.zIndex++;
-                    windowElement.setAttribute("aria-label", "Change Background window");
-                    windowElement.innerHTML = `
-                        <div class="window-header">
-                            <div class="window-title">
-                                <i class="ri-image-line"></i> Change Background
-                            </div>
-                            <div class="window-controls">
-                                <div class="window-control window-minimize" aria-label="Minimize">−</div>
-                                <div class="window-control window-close" aria-label="Close">×</div>
-                            </div>
-                        </div>
-                        <div class="window-content" id="bg-content">
-                            <label for="custom-bg-upload" id="upload-bg-section">
-                                <i class="ri-upload-cloud-2-line" style="font-size: 30px;"></i>
-                                <span>Click or drag a file to upload a custom background.</span>
-                            </label>
-                            <input type="file" id="custom-bg-upload" accept="image/*" style="display: none;">
-                        </div>
-                    `;
-                    elements.desktop.appendChild(windowElement);
-                    projLib.utils.makeDraggable(windowElement, windowElement.querySelector(".window-header"));
-                    
-                    const closeBtn = windowElement.querySelector(".window-close");
-                    const minimizeBtn = windowElement.querySelector(".window-minimize");
-                    closeBtn.addEventListener("click", () => this.close(windowId));
-                    minimizeBtn.addEventListener("click", () => this.minimize(windowId));
-                    windowElement.addEventListener("mousedown", () => this.activate(windowId));
-                    
-                    const bgContent = windowElement.querySelector("#bg-content");
-                    const fileInput = windowElement.querySelector("#custom-bg-upload");
-                    
-                    config.backgroundOptions.forEach(bg => {
-                        const bgOption = document.createElement('div');
-                        bgOption.className = 'bg-option';
-                        bgOption.style.backgroundImage = `url('${bg.url}')`;
-                        bgOption.dataset.url = bg.url;
-                        bgOption.title = bg.name;
-                        
-                        if (bg.url === state.background) {
-                            bgOption.classList.add('selected');
-                        }
-                        
-                        bgOption.addEventListener('click', () => {
-                            this.changeBackground(bg.url);
-                            document.querySelectorAll('.bg-option.selected').forEach(el => el.classList.remove('selected'));
-                            bgOption.classList.add('selected');
-                            projLib.utils.showNotification("Background changed to " + bg.name, "success");
-                        });
-                        bgContent.appendChild(bgOption);
-                    });
-                    
-                    fileInput.addEventListener('change', (e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                                this.changeBackground(event.target.result);
-                                projLib.utils.showNotification("Custom background applied!", "success");
-                            };
-                            reader.readAsDataURL(file);
-                        }
-                    });
-
-                    bgContent.addEventListener('dragleave', (e) => {
-                        e.target.closest('#upload-bg-section').style.borderColor = "#ccc";
-                    });
-
-                    bgContent.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        e.target.closest('#upload-bg-section').style.borderColor = "#ccc";
-                        const file = e.dataTransfer.files[0];
-                        if (file && file.type.startsWith('image/')) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                                this.changeBackground(event.target.result);
-                                projLib.utils.showNotification("Custom background applied!", "success");
-                            };
-                            reader.readAsDataURL(file);
-                        } else {
-                            projLib.utils.showNotification("Please drop an image file.", "error");
-                        }
-                    });
-
-                    const windowObj = {
-                        id: windowId,
-                        element: windowElement,
-                        title: "Change Background",
-                        type: "background",
-                        isMinimized: false,
-                        isMaximized: false,
-                        isFullscreen: false,
-                        originalSize: { width: 600, height: 500 },
-                        originalPosition: { x: pos.x, y: pos.y }
-                    };
-                    state.windows.push(windowObj);
-                    state.activeWindow = windowId;
-                    projLib.utils.updateTaskbar();
-                    return windowId;
-                },
-
-                changeBackground: function(url) {
-                    state.background = url;
-                    elements.desktop.style.backgroundImage = `url('${url}')`;
-                    localStorage.setItem("background", url);
-                },
-
-                close: function(windowId) {
-                    const windowObj = state.windows.find(w => w.id === windowId);
-                    if (windowObj) {
-                        windowObj.element.remove();
-                        state.windows = state.windows.filter(w => w.id !== windowId);
-                        state.activeWindow = state.windows.length > 0 ? state.windows[state.windows.length - 1].id : null;
-                        projLib.utils.updateTaskbar();
-                    }
-                },
-                
-                minimize: function(windowId) {
-                    const windowObj = state.windows.find(w => w.id === windowId);
-                    if (windowObj) {
-                        windowObj.element.classList.add("minimized");
-                        windowObj.isMinimized = true;
-                        projLib.utils.updateTaskbar();
-                    }
-                },
-                
-                restore: function(windowId) {
-                    const windowObj = state.windows.find(w => w.id === windowId);
-                    if (windowObj && windowObj.isMinimized) {
-                        windowObj.element.classList.remove("minimized");
-                        windowObj.isMinimized = false;
-                        this.activate(windowId);
-                    }
-                },
-                
-                maximize: function(windowId) {
-                    const windowObj = state.windows.find(w => w.id === windowId);
-                    if (windowObj) {
-                        if (windowObj.isMaximized) {
-                            windowObj.element.style.width = `${windowObj.originalSize.width}px`;
-                            windowObj.element.style.height = `${windowObj.originalSize.height}px`;
-                            windowObj.element.style.top = `${windowObj.originalPosition.y}px`;
-                            windowObj.element.style.left = `${windowObj.originalPosition.x}px`;
-                            windowObj.element.style.resize = "both";
-                            windowObj.isMaximized = false;
-                        } else {
-                            windowObj.originalSize = { width: windowObj.element.offsetWidth, height: windowObj.element.offsetHeight };
-                            windowObj.originalPosition = { x: windowObj.element.offsetLeft, y: windowObj.element.offsetTop };
-                            windowObj.element.style.width = "100%";
-                            windowObj.element.style.height = `calc(100vh - ${elements.topControls.offsetHeight + elements.taskbar.offsetHeight}px)`;
-                            windowObj.element.style.top = `${elements.topControls.offsetHeight}px`;
-                            windowObj.element.style.left = "0";
-                            windowObj.element.style.resize = "none";
-                            windowObj.isMaximized = true;
-                        }
-                    }
-                },
-                
-                toggleFullscreen: function(windowId) {
-                    const windowObj = state.windows.find(w => w.id === windowId);
-                    if (windowObj) {
-                        const iframe = windowObj.element.querySelector('iframe');
-                        if (iframe && iframe.requestFullscreen) {
-                            iframe.requestFullscreen();
-                        }
-                    }
-                },
-                
-                activate: function(windowId) {
-                    state.windows.forEach(w => {
-                        w.element.classList.remove("active");
-                        if (w.id !== windowId) {
-                            w.element.style.zIndex = Math.max(100, parseInt(w.element.style.zIndex));
-                        }
-                    });
-                    const windowObj = state.windows.find(w => w.id === windowId);
-                    if (windowObj) {
-                        windowObj.element.classList.add("active");
-                        windowObj.element.style.zIndex = state.zIndex++;
-                        state.activeWindow = windowId;
-                        projLib.utils.updateTaskbar();
-                    }
-                },
-            };
-            
-            // Bookmarks Management
-            projLib.bookmarks = {
-                renderCustomBookmarks: function() {
-                    elements.customBookmarksList.innerHTML = "";
-                    state.customBookmarks.forEach((bookmark, index) => {
-                        const bookmarkItem = document.createElement("div");
-                        bookmarkItem.className = "bookmark-item";
-                        bookmarkItem.dataset.url = bookmark.url;
-                        bookmarkItem.innerHTML = `
-                            <i class="ri-links-line"></i> ${bookmark.name}
-                            <button class="bookmark-delete" data-index="${index}" aria-label="Delete bookmark"><i class="ri-close-line"></i></button>
-                        `;
-                        bookmarkItem.addEventListener("click", (e) => {
-                            if (!e.target.classList.contains("bookmark-delete") && !e.target.closest(".bookmark-delete")) {
-                                projLib.windows.create(bookmark.url, bookmark.name);
-                                projLib.core.toggleBookmarks();
-                            }
-                        });
-                        elements.customBookmarksList.appendChild(bookmarkItem);
-                    });
-                    document.querySelectorAll(".bookmark-delete").forEach(btn => {
-                        btn.addEventListener("click", (e) => {
-                            e.stopPropagation();
-                            const index = e.target.closest(".bookmark-delete").dataset.index;
-                            state.customBookmarks.splice(index, 1);
-                            projLib.utils.saveCustomBookmarks();
-                            projLib.bookmarks.renderCustomBookmarks();
-                            projLib.utils.showNotification("Bookmark deleted", "info");
-                        });
-                    });
-                },
-                
-                addBookmark: function(url, name) {
-                    if (!projLib.utils.isValidUrl(url)) {
-                        projLib.utils.showNotification("Please enter a valid URL.", "error");
-                        return false;
-                    }
-                    if (!name) {
-                        name = projLib.utils.extractDomain(url);
-                    }
-                    if (!url.startsWith("http")) {
-                        url = "https://" + url;
-                    }
-                    state.customBookmarks.push({ url, name });
-                    projLib.utils.saveCustomBookmarks();
-                    this.renderCustomBookmarks();
-                    projLib.utils.showNotification("Bookmark added successfully!", "success");
+            },
+            findItemByPath: (path) => {
+                const parts = path.split('/').filter(p => p);
+                if (parts.length === 0) return state.fileSystem;
+                if (parts[0] !== 'Desktop') return null; // Only support absolute paths from Desktop for now
+                let current = state.fileSystem.Desktop;
+                for (let i = 1; i < parts.length; i++) {
+                    if (current.type !== 'folder' || !current.children || !current.children[parts[i]]) return null;
+                    current = current.children[parts[i]];
+                }
+                return current;
+            },
+            getParentFromPath: (path) => {
+                const parts = path.split('/').filter(p => p);
+                if (parts.length <= 1) return null;
+                const parentPath = parts.slice(0, -1).join('/');
+                return utils.findItemByPath(parentPath);
+            },
+            getUniqueName: (parent, baseName) => {
+                let newName = baseName;
+                let counter = 1;
+                while (parent.children[newName]) {
+                    const extension = baseName.includes('.') ? '.' + baseName.split('.').pop() : '';
+                    const nameOnly = baseName.includes('.') ? baseName.slice(0, baseName.lastIndexOf('.')) : baseName;
+                    newName = `${nameOnly} (${counter})${extension}`;
+                    counter++;
+                }
+                return newName;
+            },
+            createFile: (parentPath, fileName, content = '') => {
+                const parent = utils.findItemByPath(parentPath);
+                if (parent && parent.type === 'folder') {
+                    const uniqueName = utils.getUniqueName(parent, fileName);
+                    parent.children[uniqueName] = { type: 'file', content };
+                    utils.saveState();
+                    return `${parentPath}/${uniqueName}`;
+                }
+                return null;
+            },
+            createFolder: (parentPath, folderName) => {
+                const parent = utils.findItemByPath(parentPath);
+                if (parent && parent.type === 'folder') {
+                    const uniqueName = utils.getUniqueName(parent, folderName);
+                    parent.children[uniqueName] = { type: 'folder', children: {} };
+                    utils.saveState();
+                    return `${parentPath}/${uniqueName}`;
+                }
+                return null;
+            },
+            createLink: (parentPath, linkName, url) => {
+                 const parent = utils.findItemByPath(parentPath);
+                if (parent && parent.type === 'folder') {
+                    const uniqueName = utils.getUniqueName(parent, linkName);
+                    parent.children[uniqueName] = { type: 'link', url: url };
+                    utils.saveState();
+                    return `${parentPath}/${uniqueName}`;
+                }
+                return null;
+            },
+            deleteItem: (path) => {
+                const item = utils.findItemByPath(path);
+                if (item && item.type === 'app') {
+                    utils.showNotification("System applications cannot be deleted.", "error");
+                    return false;
+                }
+                const parent = utils.getParentFromPath(path);
+                const name = path.split('/').pop();
+                if (parent && parent.children[name]) {
+                    delete parent.children[name];
+                    delete state.iconPositions[path];
+                    utils.saveState();
                     return true;
-                },
-                
-                init: function() {
-                    this.renderCustomBookmarks();
                 }
-            };
-            
-            // Core Application Logic
-            projLib.core = {
-                init: function() {
-                    // Initialize state and components
-                    this.bindEvents();
-                    projLib.bookmarks.init();
-                    
-                    // Set initial background from localStorage
-                    projLib.windows.changeBackground(state.background);
-                    
-                    // Start clock and alarm checks
-                    projLib.utils.updateClock();
-                    setInterval(projLib.utils.updateClock, 1000);
-                    projLib.utils.checkAlarms();
-                    state.alarmCheckInterval = setInterval(() => projLib.utils.checkAlarms(), 60000);
-                    
-                    // Start start menu timer
-                    projLib.utils.updateStartMenuTime();
-                    setInterval(projLib.utils.updateStartMenuTime, 1000);
-                },
+                return false;
+            },
+            renameItem: (path, newName) => {
+                const item = utils.findItemByPath(path);
+                if (item && item.type === 'app') {
+                    utils.showNotification("System applications cannot be renamed.", "error");
+                    return false;
+                }
+                const parent = utils.getParentFromPath(path);
+                const oldName = path.split('/').pop();
+                if (!parent || !newName || newName === oldName) return false;
+                if (parent.children[newName]) {
+                    utils.showNotification("A file with that name already exists.", "error");
+                    return false;
+                }
                 
-                bindEvents: function() {
-                    elements.goBtn.addEventListener("click", this.handleGoClick);
-                    elements.urlInput.addEventListener("keypress", (e) => {
-                        if (e.key === "Enter") {
-                            this.handleGoClick();
-                        }
-                    });
-                    
-                    elements.bookmarksBtn.addEventListener("click", this.toggleBookmarks);
-                    elements.closeBookmarks.addEventListener("click", this.toggleBookmarks);
-                    elements.homeBtn.addEventListener("click", () => {
-                        projLib.windows.create(config.defaultUrl, "Home");
-                    });
-                    elements.themeBtn.addEventListener("click", this.toggleTheme);
-                    elements.addBookmarkBtn.addEventListener("click", this.addCustomBookmark);
-                    
-                    elements.startBtn.addEventListener("click", this.toggleStartMenu);
-                    document.addEventListener("click", this.handleDocumentClick);
-                    
-                    elements.notesHubBtn.addEventListener("click", () => projLib.windows.createNotesHubWindow());
-                    elements.changeBgBtn.addEventListener("click", () => projLib.windows.createBackgroundWindow());
+                parent.children[newName] = parent.children[oldName];
+                delete parent.children[oldName];
 
-                    // Initial event listeners for default bookmark items
-                    elements.bookmarkItems.forEach(item => {
-                        item.addEventListener("click", (e) => {
-                            if (!e.target.classList.contains("bookmark-delete") && !e.target.closest(".bookmark-delete")) {
-                                projLib.windows.create(item.dataset.url, item.textContent.trim());
-                                this.toggleBookmarks();
+                const newPath = path.substring(0, path.lastIndexOf('/') + 1) + newName;
+                if(state.iconPositions[path]) {
+                    state.iconPositions[newPath] = state.iconPositions[path];
+                    delete state.iconPositions[path];
+                }
+                utils.saveState();
+                return true;
+            }
+        };
+
+        const windowManager = {
+            create: (options) => {
+                const windowId = state.nextWindowId++;
+                const pos = { x: 100 + (state.windows.length % 10) * 30, y: 100 + (state.windows.length % 10) * 30 };
+                
+                const el = document.createElement("div");
+                el.className = `window ${options.className || ''}`;
+                el.id = `window-${windowId}`;
+                el.style.cssText = `width:${options.width || 400}px; height:${options.height || 300}px; top:${pos.y}px; left:${pos.x}px;`;
+                
+                el.innerHTML = `
+                    <div class="window-header">
+                        <div class="window-title"><i class="${options.icon || 'ri-window-line'}"></i> <span>${options.title}</span></div>
+                        <div class="window-controls">
+                            ${options.refreshable ? '<div class="window-control window-refresh" title="Refresh"><i class="ri-refresh-line"></i></div>' : ''}
+                            ${options.fullscreenable ? '<div class="window-control window-fullscreen" title="Fullscreen"><i class="ri-fullscreen-line"></i></div>' : ''}
+                            <div class="window-control window-minimize" title="Minimize"><i class="ri-subtract-line"></i></div>
+                            <div class="window-control window-maximize" title="Maximize"><i class="ri-checkbox-blank-line"></i></div>
+                            <div class="window-control window-close" title="Close"><i class="ri-close-line"></i></div>
+                        </div>
+                    </div>
+                    <div class="window-content">${options.content || ''}</div>`;
+
+                elements.desktop.appendChild(el);
+
+                const windowObj = { id: windowId, element: el, ...options };
+                state.windows.push(windowObj);
+
+                windowManager.bindEvents(windowObj);
+                windowManager.activate(windowId);
+                return windowObj;
+            },
+            bindEvents: (win) => {
+                const header = win.element.querySelector(".window-header");
+                header.addEventListener('mousedown', e => {
+                    if (e.target.closest('.window-control')) return;
+                    windowManager.activate(win.id);
+                    desktopManager.dragElement(win.element, e);
+                });
+                win.element.querySelector(".window-close").onclick = () => windowManager.close(win.id);
+                win.element.querySelector(".window-minimize").onclick = () => windowManager.minimize(win.id);
+                win.element.querySelector(".window-maximize").onclick = () => windowManager.maximize(win.id);
+                
+                if(win.refreshable) win.element.querySelector(".window-refresh").onclick = () => {
+                    const iframe = win.element.querySelector("iframe");
+                    if (iframe) iframe.src = iframe.src;
+                };
+                if(win.fullscreenable) win.element.querySelector(".window-fullscreen").onclick = () => windowManager.toggleFullscreen(win.element);
+            },
+            activate: (id) => {
+                const winToActivate = state.windows.find(w => w.id === id);
+                if (!winToActivate) return;
+                if (state.activeWindow === id && !winToActivate.isMinimized) return;
+                state.windows.forEach(w => w.element.classList.remove("active"));
+                winToActivate.element.classList.add("active");
+                winToActivate.element.style.zIndex = ++state.zIndex;
+                state.activeWindow = id;
+                if(winToActivate.isMinimized) windowManager.restore(id);
+                core.updateTaskbar();
+            },
+            close: (id) => {
+                const win = state.windows.find(w => w.id === id);
+                if (win && win.onClose) win.onClose();
+
+                const idx = state.windows.findIndex(w => w.id === id);
+                if (idx > -1) {
+                    state.windows[idx].element.remove();
+                    state.windows.splice(idx, 1);
+                    if(state.activeWindow === id) {
+                        state.activeWindow = state.windows.length > 0 ? state.windows[state.windows.length - 1].id : null;
+                    }
+                    core.updateTaskbar();
+                }
+            },
+            minimize: (id) => {
+                const win = state.windows.find(w => w.id === id);
+                if (win) {
+                    win.element.classList.add("minimized");
+                    win.isMinimized = true;
+                    if(state.activeWindow === id) state.activeWindow = null;
+                    core.updateTaskbar();
+                }
+            },
+            restore: (id) => {
+                const win = state.windows.find(w => w.id === id);
+                if (win && win.isMinimized) {
+                    win.element.classList.remove("minimized");
+                    win.isMinimized = false;
+                    windowManager.activate(id);
+                }
+            },
+            maximize: (id) => {
+                const win = state.windows.find(w => w.id === id);
+                if (win) win.element.classList.toggle("maximized");
+            },
+            toggleFullscreen: (element) => {
+                if (!document.fullscreenElement) {
+                    element.requestFullscreen().catch(err => {
+                        utils.showNotification(`Error: ${err.message}`, "error");
+                    });
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+        };
+
+        const appManager = {
+            launch: (appId, data) => {
+                const app = appManager.apps[appId];
+                if (app) app.launch(data);
+            },
+            apps: {
+                explorer: {
+                    launch: (path = 'Desktop') => {
+                        const existingWindow = state.windows.find(w => w.appId === 'explorer');
+                        if (existingWindow) {
+                            appManager.apps.explorer.render(existingWindow, path);
+                            windowManager.activate(existingWindow.id);
+                        } else {
+                            const win = windowManager.create({
+                                title: 'File Explorer', icon: 'ri-folder-line', className: 'file-explorer-window',
+                                width: 600, height: 400, appId: 'explorer'
+                            });
+                            appManager.apps.explorer.render(win, path);
+                        }
+                    },
+                    render: (win, path) => {
+                        const contentEl = win.element.querySelector('.window-content');
+                        const titleEl = win.element.querySelector('.window-title span');
+                        titleEl.textContent = path.split('/').pop() || 'File Explorer';
+
+                        const goUp = () => {
+                            const parentPath = path.substring(0, path.lastIndexOf('/'));
+                            if (parentPath) appManager.apps.explorer.render(win, parentPath);
+                        };
+
+                        const breadcrumbs = path.split('/').map((part, index, arr) => {
+                            const currentPath = arr.slice(0, index + 1).join('/');
+                            return `<span class="breadcrumb-item" data-path="${currentPath}">${part}</span>`;
+                        }).join(' / ');
+
+                        contentEl.innerHTML = `
+                            <div class="file-explorer-toolbar">
+                                <button id="back-btn-${win.id}" ${path === 'Desktop' ? 'disabled' : ''}><i class="ri-arrow-left-line"></i> Back</button>
+                                <div class="file-explorer-breadcrumbs">${breadcrumbs}</div>
+                            </div>
+                            <div class="file-explorer-grid"></div>`;
+                        
+                        const gridEl = contentEl.querySelector('.file-explorer-grid');
+                        gridEl.addEventListener('contextmenu', e => {
+                            if (e.target === gridEl) {
+                                desktopManager.showContextMenu(e, 'explorer-bg', {path: path, win: win});
                             }
                         });
-                    });
-                },
-                
-                handleGoClick: function() {
-                    const url = elements.urlInput.value;
-                    if (url) {
-                        projLib.windows.create(url);
+
+                        contentEl.querySelector(`#back-btn-${win.id}`).onclick = goUp;
+                        contentEl.querySelectorAll('.breadcrumb-item').forEach(el => {
+                            el.onclick = () => appManager.apps.explorer.render(win, el.dataset.path);
+                        });
+                        
+                        const folder = utils.findItemByPath(path);
+                        if (folder && folder.type === 'folder') {
+                            Object.entries(folder.children).forEach(([name, item]) => {
+                                const iconEl = document.createElement('div');
+                                iconEl.className = 'desktop-icon';
+                                const fullPath = `${path}/${name}`;
+                                iconEl.dataset.path = fullPath;
+                                const iconClass = item.type === 'folder' ? 'ri-folder-3-line' : (item.type === 'app' ? item.icon : utils.getIconForFile(name, item));
+                                iconEl.innerHTML = `<i class="${iconClass}"></i><div class="desktop-icon-name">${name}</div>`;
+                                iconEl.ondblclick = () => desktopManager.onIconDoubleClick(item, fullPath);
+                                iconEl.addEventListener('contextmenu', e => desktopManager.showContextMenu(e, 'icon', iconEl));
+                                gridEl.appendChild(iconEl);
+                            });
+                        }
                     }
                 },
-                
-                toggleStartMenu: function() {
-                    const isVisible = elements.contextMenu.style.display === "block";
-                    elements.contextMenu.style.display = isVisible ? "none" : "block";
-                    if (!isVisible) {
-                        elements.contextMenu.style.top = (window.innerHeight - elements.taskbar.offsetHeight - elements.contextMenu.offsetHeight - 10) + "px";
-                        elements.contextMenu.style.left = "10px";
+                editor: {
+                    launch: (path) => {
+                        const file = utils.findItemByPath(path);
+                        if (!file || file.type !== 'file') return;
+                        const win = windowManager.create({
+                            title: path.split('/').pop(), icon: 'ri-file-text-line', className: 'text-editor-window',
+                            width: 500, height: 600,
+                            content: `<textarea class="text-editor-content"></textarea>`
+                        });
+                        const textarea = win.element.querySelector('textarea');
+                        textarea.value = file.content;
+                        textarea.addEventListener('input', () => { file.content = textarea.value; utils.saveState(); });
                     }
                 },
-                
-                handleDocumentClick: function(e) {
-                    if (elements.contextMenu.style.display === "block" && !elements.contextMenu.contains(e.target) && e.target !== elements.startBtn) {
-                        elements.contextMenu.style.display = "none";
+                imageViewer: {
+                    launch: (path) => {
+                        const file = utils.findItemByPath(path);
+                        if (!file || file.type !== 'file') return;
+                        windowManager.create({
+                            title: path.split('/').pop(), icon: 'ri-image-line', className: 'image-viewer-window',
+                            width: 700, height: 500,
+                            content: `<div class="image-viewer-content"><img src="${file.content}" alt="${path}"></div>`
+                        });
                     }
                 },
-                
-                toggleBookmarks: function() {
-                    elements.bookmarksOverlay.style.display = elements.bookmarksOverlay.style.display === "flex" ? "none" : "flex";
-                    
-                    if (elements.bookmarksOverlay.style.display === "flex") {
-                        elements.newBookmarkUrl.focus();
+                music: {
+                    launch: () => {
+                        const playlist = [
+                            { title: "Lofi Beat", src: "https://cdn.pixabay.com/download/audio/2022/02/07/audio_c6b9b8d96e.mp3" },
+                            { title: "Ambient Piano", src: "https://cdn.pixabay.com/download/audio/2022/08/03/audio_51f6783591.mp3" },
+                            { title: "Chill Abstract", src: "https://cdn.pixabay.com/download/audio/2022/01/21/audio_31743c5229.mp3" }
+                        ];
+                        let currentTrack = 0;
+
+                        const win = windowManager.create({
+                            title: 'Music Player', icon: 'ri-music-2-line', className: 'music-player-window',
+                            width: 400, height: 300,
+                            onClose: () => { elements.musicPlayerAudio.pause(); },
+                            content: `<div class="music-player-content">
+                                        <div id="song-title"></div>
+                                        <div class="controls">
+                                            <button id="prev-btn"><i class="ri-skip-back-fill"></i></button>
+                                            <button id="play-pause-btn"><i class="ri-play-fill"></i></button>
+                                            <button id="next-btn"><i class="ri-skip-forward-fill"></i></button>
+                                        </div>
+                                        <div class="custom-track-form">
+                                            <input type="text" id="custom-track-url" placeholder="Enter direct audio URL...">
+                                            <button id="load-track-btn">Load</button>
+                                        </div>
+                                        <div class="playlist-form">
+                                            <p>Note: YouTube/Spotify links can't be played here. They will open in the browser.</p>
+                                            <div class="custom-track-form">
+                                                <input type="text" id="playlist-url" placeholder="Enter YouTube/Spotify playlist URL...">
+                                                <button id="open-playlist-btn">Open</button>
+                                            </div>
+                                        </div>
+                                      </div>`
+                        });
+                        
+                        const audio = elements.musicPlayerAudio;
+                        const contentEl = win.element.querySelector('.window-content');
+                        const titleEl = contentEl.querySelector('#song-title');
+                        const playPauseBtn = contentEl.querySelector('#play-pause-btn');
+                        const prevBtn = contentEl.querySelector('#prev-btn');
+                        const nextBtn = contentEl.querySelector('#next-btn');
+                        const customUrlInput = contentEl.querySelector('#custom-track-url');
+                        const loadTrackBtn = contentEl.querySelector('#load-track-btn');
+                        const playlistUrlInput = contentEl.querySelector('#playlist-url');
+                        const openPlaylistBtn = contentEl.querySelector('#open-playlist-btn');
+
+                        const loadTrack = (index) => {
+                            audio.src = playlist[index].src;
+                            titleEl.textContent = playlist[index].title;
+                            audio.load();
+                        };
+
+                        playPauseBtn.onclick = () => {
+                            if (audio.paused) {
+                                audio.play();
+                                playPauseBtn.innerHTML = '<i class="ri-pause-fill"></i>';
+                            } else {
+                                audio.pause();
+                                playPauseBtn.innerHTML = '<i class="ri-play-fill"></i>';
+                            }
+                        };
+                        nextBtn.onclick = () => { currentTrack = (currentTrack + 1) % playlist.length; loadTrack(currentTrack); audio.play(); playPauseBtn.innerHTML = '<i class="ri-pause-fill"></i>'; };
+                        prevBtn.onclick = () => { currentTrack = (currentTrack - 1 + playlist.length) % playlist.length; loadTrack(currentTrack); audio.play(); playPauseBtn.innerHTML = '<i class="ri-pause-fill"></i>'; };
+                        audio.onended = () => nextBtn.click();
+                        
+                        loadTrackBtn.onclick = () => {
+                            const url = customUrlInput.value.trim();
+                            if (url) {
+                                audio.src = url;
+                                titleEl.textContent = "Custom Track";
+                                audio.load();
+                                audio.play();
+                                playPauseBtn.innerHTML = '<i class="ri-pause-fill"></i>';
+                            }
+                        };
+                        
+                        openPlaylistBtn.onclick = () => {
+                            const url = playlistUrlInput.value.trim();
+                            if (url) appManager.launch('browser', url);
+                        };
+
+                        loadTrack(currentTrack);
                     }
                 },
-                
-                addCustomBookmark: function() {
-                    const url = elements.newBookmarkUrl.value.trim();
-                    const name = elements.newBookmarkName.value.trim();
-                    
-                    if (projLib.bookmarks.addBookmark(url, name)) {
-                        elements.newBookmarkUrl.value = "";
-                        elements.newBookmarkName.value = "";
-                        elements.newBookmarkUrl.focus();
+                terminal: {
+                    launch: () => {
+                        let currentDir = 'Desktop';
+                        let commandHistory = [];
+                        let historyIndex = -1;
+
+                        const win = windowManager.create({
+                            title: 'Terminal', icon: 'ri-terminal-box-line', className: 'terminal-window',
+                            width: 600, height: 400,
+                            content: `<div class="terminal-content"><div class="terminal-input-line"><span class="terminal-prompt"></span><input type="text" class="terminal-input"></div></div>`
+                        });
+                        
+                        const contentEl = win.element.querySelector('.terminal-content');
+                        const inputEl = contentEl.querySelector('.terminal-input');
+                        const promptEl = contentEl.querySelector('.terminal-prompt');
+
+                        const print = (text) => {
+                            const line = document.createElement('div');
+                            line.textContent = text;
+                            contentEl.insertBefore(line, contentEl.querySelector('.terminal-input-line'));
+                        };
+
+                        const updatePrompt = () => { promptEl.textContent = `user@minios:~/${currentDir.split('/').pop()}$ `; };
+                        
+                        const execute = (cmd) => {
+                            const [command, ...args] = cmd.trim().split(' ');
+                            print(`${promptEl.textContent}${cmd}`);
+                            
+                            switch(command) {
+                                case 'ls':
+                                    const item = utils.findItemByPath(currentDir);
+                                    if (item && item.type === 'folder') {
+                                        print(Object.keys(item.children).join('  '));
+                                    } else { print('ls: error'); }
+                                    break;
+                                case 'cd':
+                                    const newPath = args[0];
+                                    if (!newPath) break;
+                                    if (newPath === '..') {
+                                        if (currentDir !== 'Desktop') currentDir = currentDir.substring(0, currentDir.lastIndexOf('/'));
+                                    } else {
+                                        const targetPath = newPath.startsWith('Desktop') ? newPath : `${currentDir}/${newPath}`;
+                                        const target = utils.findItemByPath(targetPath);
+                                        if (target && target.type === 'folder') currentDir = targetPath;
+                                        else print(`cd: no such directory: ${newPath}`);
+                                    }
+                                    break;
+                                case 'cat':
+                                    const file = utils.findItemByPath(`${currentDir}/${args[0]}`);
+                                    if (file && file.type === 'file') print(file.content);
+                                    else print(`cat: no such file: ${args[0]}`);
+                                    break;
+                                case 'mkdir':
+                                    utils.createFolder(currentDir, args[0]);
+                                    print(`Created directory: ${args[0]}`);
+                                    break;
+                                case 'touch':
+                                    utils.createFile(currentDir, args[0]);
+                                    print(`Created file: ${args[0]}`);
+                                    break;
+                                case 'rm':
+                                    if (utils.deleteItem(`${currentDir}/${args[0]}`)) print(`Removed ${args[0]}`);
+                                    else print(`rm: cannot remove ${args[0]}: No such file or directory`);
+                                    break;
+                                case 'clear':
+                                    Array.from(contentEl.children).forEach(child => {
+                                        if (!child.classList.contains('terminal-input-line')) child.remove();
+                                    });
+                                    break;
+                                case 'pwd':
+                                    print(`/${currentDir}`);
+                                    break;
+                                case 'help':
+                                    print('Available commands: ls, cd, cat, mkdir, touch, rm, pwd, clear, help');
+                                    break;
+                                default:
+                                    if(cmd.trim()) print(`command not found: ${cmd}`);
+                            }
+                            updatePrompt();
+                            contentEl.scrollTop = contentEl.scrollHeight;
+                        };
+
+                        inputEl.onkeydown = (e) => {
+                            if (e.key === 'Enter') {
+                                const cmd = inputEl.value;
+                                if (cmd) {
+                                    commandHistory.push(cmd);
+                                    historyIndex = commandHistory.length;
+                                }
+                                execute(cmd);
+                                inputEl.value = '';
+                            } else if (e.key === 'ArrowUp') {
+                                if (historyIndex > 0) {
+                                    historyIndex--;
+                                    inputEl.value = commandHistory[historyIndex];
+                                }
+                            } else if (e.key === 'ArrowDown') {
+                                if (historyIndex < commandHistory.length - 1) {
+                                    historyIndex++;
+                                    inputEl.value = commandHistory[historyIndex];
+                                } else {
+                                    historyIndex = commandHistory.length;
+                                    inputEl.value = '';
+                                }
+                            }
+                        };
+                        updatePrompt();
+                        inputEl.focus();
+                        contentEl.onclick = () => inputEl.focus();
                     }
                 },
-                
-                toggleTheme: function() {
-                    state.theme = state.theme === "dark" ? "light" : "dark";
-                    document.body.classList.toggle("light-theme", state.theme === "light");
-                    localStorage.setItem("theme", state.theme);
-                    projLib.utils.showNotification(`Theme set to ${state.theme} mode`);
+                help: {
+                    launch: () => {
+                        windowManager.create({
+                            title: 'Help', icon: 'ri-question-line', className: 'help-window', width: 600, height: 500,
+                            content: `<div class="help-content">
+                                <h2>Welcome to Mini OS Help</h2>
+                                <p>This guide will help you navigate the features of this operating system.</p>
+                                
+                                <h3><i class="ri-computer-line"></i> The Desktop</h3>
+                                <ul>
+                                    <li><b>Icons:</b> Double-click to open apps, folders, or files. Drag to move them around. They will snap to a grid and won't overlap.</li>
+                                    <li><b>Right-Click Desktop:</b> Right-click on the desktop to create new text files, folders, or website links.</li>
+                                    <li><b>Right-Click Icon:</b> Right-click an icon to open, rename, or delete it (system apps cannot be altered).</li>
+                                    <li><b>Selection:</b> Click and drag on the desktop to select multiple icons.</li>
+                                </ul>
+
+                                <h3><i class="ri-upload-cloud-2-line"></i> How to Import Files</h3>
+                                <p>Since this OS runs in a browser, it cannot access your local files directly. To "import" a file, you must use a URL.</p>
+                                <ul>
+                                    <li>1. Find a direct URL to an image or audio file online.</li>
+                                    <li>2. Open the File Explorer and navigate to the desired folder.</li>
+                                    <li>3. Right-click in an empty area inside the folder.</li>
+                                    <li>4. Select "New File from URL".</li>
+                                    <li>5. Enter the URL and a desired filename (e.g., <code>my-image.jpg</code>).</li>
+                                    <li>6. The new file will appear. You can now open it with the Image Viewer or load it in the Music Player.</li>
+                                </ul>
+
+                                <h3><i class="ri-terminal-box-line"></i> Terminal Command Reference</h3>
+                                <table>
+                                    <thead><tr><th>Command</th><th>Description</th></tr></thead>
+                                    <tbody>
+                                        <tr><td><code>ls</code></td><td>Lists files and folders in the current directory.</td></tr>
+                                        <tr><td><code>cd [dir]</code></td><td>Changes directory. Use <code>..</code> to go up.</td></tr>
+                                        <tr><td><code>cat [file]</code></td><td>Displays the content of a text file.</td></tr>
+                                        <tr><td><code>mkdir [name]</code></td><td>Creates a new folder.</td></tr>
+                                        <tr><td><code>touch [name]</code></td><td>Creates a new, empty text file.</td></tr>
+                                        <tr><td><code>rm [name]</code></td><td>Removes a file or empty folder.</td></tr>
+                                        <tr><td><code>pwd</code></td><td>Prints the current working directory path.</td></tr>
+                                        <tr><td><code>clear</code></td><td>Clears the terminal screen.</td></tr>
+                                    </tbody>
+                                </table>
+                               </div>`
+                        });
+                    }
+                },
+                calculator: {
+                    launch: () => {
+                        windowManager.create({
+                            title: 'Calculator', icon: 'ri-calculator-line', className: 'calculator-window',
+                            width: 320, height: 480, content: `
+                            <div class="calc-display">0</div>
+                            <div class="calc-buttons">
+                                <button>7</button><button>8</button><button>9</button><button class="operator">/</button>
+                                <button>4</button><button>5</button><button>6</button><button class="operator">*</button>
+                                <button>1</button><button>2</button><button>3</button><button class="operator">-</button>
+                                <button>0</button><button>.</button><button class="clear">C</button><button class="operator">+</button>
+                                <button class="equal">=</button>
+                            </div>`
+                        });
+                    }
+                },
+                settings: {
+                    launch: () => {
+                        const win = windowManager.create({
+                            title: 'Settings', icon: 'ri-settings-3-line', className: 'settings-window',
+                            width: 600, height: 500
+                        });
+                        const contentEl = win.element.querySelector('.window-content');
+                        contentEl.innerHTML = `
+                            <div class="settings-section">
+                                <h3>Desktop Background</h3>
+                                <p>Select a preset:</p>
+                                <div id="bg-options-grid"></div>
+                                <p style="margin-top: 15px;">Or set a custom URL:</p>
+                                <input type="text" id="custom-bg-url" placeholder="https://example.com/image.jpg">
+                                <button id="set-custom-bg-btn">Set Background</button>
+                            </div>
+                            <div class="settings-section">
+                                <h3>System</h3>
+                                <p>Reset the desktop to its original state. This will remove all user-created files and folders from the desktop.</p>
+                                <button id="reset-desktop-btn" style="background-color: var(--error); color: white;">Reset Desktop</button>
+                            </div>`;
+                        
+                        const bgGrid = contentEl.querySelector('#bg-options-grid');
+                        config.backgroundOptions.forEach(bg => {
+                            const opt = document.createElement('div');
+                            opt.className = `bg-option ${state.background === bg.url ? 'selected' : ''}`;
+                            opt.style.backgroundImage = `url('${bg.url}')`;
+                            opt.onclick = () => core.setBackground(bg.url, bgGrid);
+                            bgGrid.appendChild(opt);
+                        });
+                        contentEl.querySelector('#set-custom-bg-btn').onclick = () => {
+                            const url = contentEl.querySelector('#custom-bg-url').value.trim();
+                            if (url) core.setBackground(url, bgGrid);
+                        };
+                        contentEl.querySelector('#reset-desktop-btn').onclick = () => {
+                            if (confirm('Are you sure you want to reset the desktop? All user-created files and folders on the desktop will be permanently removed.')) {
+                                state.fileSystem.Desktop.children = JSON.parse(JSON.stringify(defaultDesktopItems));
+                                state.iconPositions = {};
+                                utils.saveState();
+                                desktopManager.renderIcons();
+                                utils.showNotification('Desktop has been reset.', 'success');
+                            }
+                        };
+                    }
+                },
+                browser: {
+                    launch: (url) => {
+                         windowManager.create({
+                            title: 'Browser', icon: 'ri-global-line',
+                            width: config.defaultWindowSize.width, height: config.defaultWindowSize.height, refreshable: true, fullscreenable: true,
+                            content: `<iframe src="${url}" style="width:100%; height:100%; border:none;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>`
+                        });
+                    }
+                },
+                bookmarks: {
+                    launch: () => {
+                        core.toggleBookmarksOverlay();
+                    }
+                },
+                clock: {
+                    launch: () => {
+                        let clockInterval, timerInterval;
+                        const win = windowManager.create({
+                            title: 'Clock', icon: 'ri-time-line', className: 'clock-window', width: 400, height: 450,
+                            onClose: () => { clearInterval(clockInterval); clearInterval(timerInterval); },
+                            content: `
+                                <div class="clock-tabs">
+                                    <div class="clock-tab active" data-tab="clock">Clock</div>
+                                    <div class="clock-tab" data-tab="timer">Timer</div>
+                                    <div class="clock-tab" data-tab="alarm">Alarm</div>
+                                </div>
+                                <div id="clock-panel" class="clock-panel active">
+                                    <div id="clock-display"></div>
+                                    <div id="date-display"></div>
+                                </div>
+                                <div id="timer-panel" class="clock-panel">
+                                    <div class="timer-display" id="timer-display" style="display:none;">00:05:00</div>
+                                    <div class="timer-inputs">
+                                        <input type="number" id="timer-h" value="0" min="0" title="Hours"> :
+                                        <input type="number" id="timer-m" value="5" min="0" max="59" title="Minutes"> :
+                                        <input type="number" id="timer-s" value="0" min="0" max="59" title="Seconds">
+                                    </div>
+                                    <div class="timer-controls">
+                                        <button id="timer-start">Start</button>
+                                        <button id="timer-pause" style="display:none;">Pause</button>
+                                        <button id="timer-reset">Reset</button>
+                                    </div>
+                                </div>
+                                <div id="alarm-panel" class="clock-panel">
+                                    <div class="alarm-form">
+                                        <input type="time" id="alarm-time">
+                                        <button id="set-alarm-btn">Set Alarm</button>
+                                    </div>
+                                    <div id="alarms-list"></div>
+                                </div>`
+                        });
+
+                        const contentEl = win.element.querySelector('.window-content');
+                        const clockDisplay = contentEl.querySelector('#clock-display');
+                        const dateDisplay = contentEl.querySelector('#date-display');
+                        
+                        const updateTime = () => {
+                            const now = new Date();
+                            clockDisplay.textContent = now.toLocaleTimeString();
+                            dateDisplay.textContent = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                        };
+                        clockInterval = setInterval(updateTime, 1000);
+                        updateTime();
+
+                        contentEl.querySelectorAll('.clock-tab').forEach(tab => {
+                            tab.onclick = () => {
+                                contentEl.querySelector('.clock-tab.active').classList.remove('active');
+                                tab.classList.add('active');
+                                contentEl.querySelector('.clock-panel.active').classList.remove('active');
+                                contentEl.querySelector(`#${tab.dataset.tab}-panel`).classList.add('active');
+                            };
+                        });
+
+                        const timerDisplay = contentEl.querySelector('#timer-display');
+                        const timerInputs = contentEl.querySelector('.timer-inputs');
+                        const h = contentEl.querySelector('#timer-h'), m = contentEl.querySelector('#timer-m'), s = contentEl.querySelector('#timer-s');
+                        const startBtn = contentEl.querySelector('#timer-start'), pauseBtn = contentEl.querySelector('#timer-pause'), resetBtn = contentEl.querySelector('#timer-reset');
+                        let totalSeconds = 0, paused = false;
+
+                        const updateTimerDisplay = () => {
+                            const hours = Math.floor(totalSeconds / 3600);
+                            const minutes = Math.floor((totalSeconds % 3600) / 60);
+                            const seconds = totalSeconds % 60;
+                            timerDisplay.textContent = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+                        };
+
+                        startBtn.onclick = () => {
+                            if (paused) {
+                                paused = false;
+                            } else {
+                                totalSeconds = parseInt(h.value)*3600 + parseInt(m.value)*60 + parseInt(s.value);
+                            }
+                            if (totalSeconds <= 0) return;
+                            updateTimerDisplay();
+                            
+                            timerInterval = setInterval(() => {
+                                if (paused) return;
+                                totalSeconds--;
+                                updateTimerDisplay();
+                                if (totalSeconds <= 0) {
+                                    clearInterval(timerInterval);
+                                    utils.showNotification("Timer finished!", "success");
+                                    elements.alarmSound.loop = false; elements.alarmSound.play();
+                                    resetBtn.click();
+                                }
+                            }, 1000);
+                            startBtn.style.display = 'none'; pauseBtn.style.display = 'inline-block';
+                            timerDisplay.style.display = 'block'; timerInputs.style.display = 'none';
+                        };
+                        pauseBtn.onclick = () => { paused = true; startBtn.textContent = 'Resume'; startBtn.style.display = 'inline-block'; pauseBtn.style.display = 'none'; };
+                        resetBtn.onclick = () => { clearInterval(timerInterval); totalSeconds = 0; paused = false; updateTimerDisplay(); startBtn.textContent = 'Start'; startBtn.style.display = 'inline-block'; pauseBtn.style.display = 'none'; timerDisplay.style.display = 'none'; timerInputs.style.display = 'block'; };
+                        
+                        const setAlarmBtn = contentEl.querySelector('#set-alarm-btn');
+                        const alarmTimeInput = contentEl.querySelector('#alarm-time');
+                        const alarmsList = contentEl.querySelector('#alarms-list');
+
+                        const renderAlarms = () => {
+                            alarmsList.innerHTML = '';
+                            state.alarms.forEach((alarm, index) => {
+                                const alarmEl = document.createElement('div');
+                                alarmEl.className = 'alarm-item';
+                                alarmEl.innerHTML = `<span>${alarm.time}</span><button data-index="${index}">&times;</button>`;
+                                alarmsList.appendChild(alarmEl);
+                            });
+                        };
+                        
+                        alarmsList.onclick = (e) => {
+                            if (e.target.tagName === 'BUTTON') {
+                                state.alarms.splice(e.target.dataset.index, 1);
+                                utils.saveState();
+                                renderAlarms();
+                            }
+                        };
+
+                        setAlarmBtn.onclick = () => {
+                            if (!alarmTimeInput.value) return;
+                            state.alarms.push({ time: alarmTimeInput.value, lastTriggeredDay: null });
+                            utils.saveState();
+                            renderAlarms();
+                        };
+                        renderAlarms();
+                    }
                 }
-            };
-            
-            document.addEventListener("DOMContentLoaded", () => projLib.core.init());
-            
-            window.projLib = projLib;
-        })(window.projLib || {});
+            }
+        };
+
+        const desktopManager = {
+            init: () => {
+                elements.desktop.addEventListener('contextmenu', e => desktopManager.showContextMenu(e, 'desktop'));
+                elements.desktop.addEventListener('mousedown', e => desktopManager.onMouseDown(e));
+                desktopManager.renderIcons();
+            },
+            renderIcons: () => {
+                elements.desktopIcons.innerHTML = '';
+                const desktopItems = state.fileSystem['Desktop'].children;
+                Object.entries(desktopItems).forEach(([name, item]) => desktopManager.createIcon(name, item));
+            },
+            createIcon: (name, item) => {
+                const path = `Desktop/${name}`;
+                const icon = document.createElement('div');
+                icon.className = 'desktop-icon';
+                icon.dataset.path = path;
+                
+                const iconClass = item.type === 'folder' ? 'ri-folder-3-line' : (item.type === 'app' ? item.icon : utils.getIconForFile(name, item));
+                icon.innerHTML = `<i class="${iconClass}"></i><div class="desktop-icon-name">${name}</div>`;
+                
+                if (!state.iconPositions[path]) {
+                    const {top, left} = desktopManager.findNextAvailablePosition();
+                    state.iconPositions[path] = { top, left };
+                    utils.saveState();
+                }
+                const pos = state.iconPositions[path];
+                icon.style.top = `${pos.top}px`;
+                icon.style.left = `${pos.left}px`;
+
+                icon.addEventListener('mousedown', e => desktopManager.onIconMouseDown(e, icon));
+                icon.addEventListener('contextmenu', e => desktopManager.showContextMenu(e, 'icon', icon));
+                elements.desktopIcons.appendChild(icon);
+            },
+            findNextAvailablePosition: () => {
+                const occupied = new Set(Object.values(state.iconPositions).map(p => `${p.left},${p.top}`));
+                const desktopRect = elements.desktop.getBoundingClientRect();
+                for (let y = 0; y < desktopRect.height - config.gridSize; y += config.gridSize) {
+                    for (let x = 0; x < desktopRect.width - config.gridSize; x += config.gridSize) {
+                        if (!occupied.has(`${x},${y}`)) {
+                            return { top: y, left: x };
+                        }
+                    }
+                }
+                return { top: 0, left: 0 }; // Fallback
+            },
+            onMouseDown: (e) => {
+                if (e.target !== elements.desktopIcons && e.target !== elements.desktop) return;
+                desktopManager.clearSelectedIcons();
+                
+                const startX = e.clientX; const startY = e.clientY;
+                const desktopRect = elements.desktop.getBoundingClientRect();
+                elements.selectionBox.style.left = `${startX - desktopRect.left}px`;
+                elements.selectionBox.style.top = `${startY - desktopRect.top}px`;
+                elements.selectionBox.style.width = '0px'; elements.selectionBox.style.height = '0px';
+                elements.selectionBox.style.display = 'block';
+
+                const onMouseMove = (moveE) => {
+                    const currentX = moveE.clientX; const currentY = moveE.clientY;
+                    const width = Math.abs(currentX - startX); const height = Math.abs(currentY - startY);
+                    const newX = Math.min(startX, currentX) - desktopRect.left;
+                    const newY = Math.min(startY, currentY) - desktopRect.top;
+                    
+                    elements.selectionBox.style.left = `${newX}px`; elements.selectionBox.style.top = `${newY}px`;
+                    elements.selectionBox.style.width = `${width}px`; elements.selectionBox.style.height = `${height}px`;
+
+                    const boxRect = elements.selectionBox.getBoundingClientRect();
+                    document.querySelectorAll('.desktop-icon').forEach(icon => {
+                        const iconRect = icon.getBoundingClientRect();
+                        const overlaps = iconRect.left < boxRect.right && iconRect.right > boxRect.left && iconRect.top < boxRect.bottom && iconRect.bottom > boxRect.top;
+                        icon.classList.toggle('selected', overlaps);
+                    });
+                };
+                const onMouseUp = () => {
+                    elements.selectionBox.style.display = 'none';
+                    state.selectedIcons = new Set(document.querySelectorAll('.desktop-icon.selected'));
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            },
+            onIconMouseDown: (e, icon) => {
+                e.stopPropagation();
+                let isDragging = false;
+                let dragThreshold = 5;
+                
+                if (!e.ctrlKey && !icon.classList.contains('selected')) {
+                    desktopManager.clearSelectedIcons();
+                }
+                if (e.ctrlKey) {
+                    icon.classList.toggle('selected');
+                } else {
+                    icon.classList.add('selected');
+                }
+                state.selectedIcons = new Set(document.querySelectorAll('.desktop-icon.selected'));
+                
+                const startPositions = Array.from(state.selectedIcons).map(ic => ({
+                    el: ic, startX: ic.offsetLeft, startY: ic.offsetTop
+                }));
+                const startMouseX = e.clientX; const startMouseY = e.clientY;
+
+                const onMouseMove = (moveE) => {
+                    if (!isDragging && (Math.abs(moveE.clientX - startMouseX) > dragThreshold || Math.abs(moveE.clientY - startMouseY) > dragThreshold)) {
+                        isDragging = true;
+                        icon.ondblclick = null;
+                    }
+                    if (isDragging) {
+                        const dx = moveE.clientX - startMouseX; const dy = moveE.clientY - startMouseY;
+                        startPositions.forEach(pos => {
+                            pos.el.style.left = `${pos.startX + dx}px`;
+                            pos.el.style.top = `${pos.startY + dy}px`;
+                        });
+                    }
+                };
+
+                const onMouseUp = () => {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    
+                    if (isDragging) {
+                        startPositions.forEach(pos => {
+                             const occupied = new Set(Object.values(state.iconPositions).map(p => `${p.left},${p.top}`));
+                             const originalPos = state.iconPositions[pos.el.dataset.path];
+                             if (originalPos) occupied.delete(`${originalPos.left},${originalPos.top}`);
+
+                            let newLeft = Math.round(pos.el.offsetLeft / config.gridSize) * config.gridSize;
+                            let newTop = Math.round(pos.el.offsetTop / config.gridSize) * config.gridSize;
+                            
+                            while(occupied.has(`${newLeft},${newTop}`)) {
+                                newLeft += config.gridSize;
+                                if (newLeft + config.gridSize > elements.desktop.clientWidth) {
+                                    newLeft = 0;
+                                    newTop += config.gridSize;
+                                }
+                            }
+                            pos.el.style.left = `${newLeft}px`;
+                            pos.el.style.top = `${newTop}px`;
+                            state.iconPositions[pos.el.dataset.path] = { top: newTop, left: newLeft };
+                            occupied.add(`${newLeft},${newTop}`);
+                        });
+                        utils.saveState();
+                    }
+                    // Re-bind dblclick after operation
+                    icon.ondblclick = () => {
+                         const item = utils.findItemByPath(icon.dataset.path);
+                         desktopManager.onIconDoubleClick(item, icon.dataset.path);
+                    };
+                };
+                
+                icon.ondblclick = () => {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    const item = utils.findItemByPath(icon.dataset.path);
+                    desktopManager.onIconDoubleClick(item, icon.dataset.path);
+                };
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            },
+            onIconDoubleClick: (item, path) => {
+                const ext = path.split('.').pop().toLowerCase();
+                if (item.type === 'app') { appManager.launch(item.appId, path); }
+                else if (item.type === 'folder') { appManager.launch('explorer', path); }
+                else if (item.type === 'link') { appManager.launch('browser', item.url); }
+                else if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) { appManager.launch('imageViewer', path); }
+                else if (['mp3', 'wav', 'ogg'].includes(ext)) { utils.showNotification("Open music files via Music Player app.", "info"); }
+                else if (item.type === 'file') { appManager.launch('editor', path); }
+            },
+            clearSelectedIcons: () => {
+                document.querySelectorAll('.desktop-icon.selected').forEach(icon => icon.classList.remove('selected'));
+                state.selectedIcons.clear();
+            },
+            showContextMenu: (e, type, target) => {
+                e.preventDefault(); e.stopPropagation();
+                let menuItems = '';
+                const path = target?.dataset?.path;
+                const item = path ? utils.findItemByPath(path) : null;
+
+                switch(type) {
+                    case 'desktop':
+                        menuItems = `<div class="context-item" data-action="create-folder"><i class="ri-folder-add-line"></i>New Folder</div>
+                                     <div class="context-item" data-action="create-file"><i class="ri-file-add-line"></i>New Text File</div>
+                                     <div class="context-item" data-action="create-link"><i class="ri-link"></i>New Link</div>`;
+                        break;
+                    case 'icon':
+                        if (item) {
+                            menuItems = `<div class="context-item" data-action="open"><i class="ri-arrow-right-up-line"></i>Open</div>`;
+                            if (item.type !== 'app') {
+                                menuItems += `<div class="context-item" data-action="rename"><i class="ri-pencil-line"></i>Rename</div>
+                                              <div class="context-item" data-action="delete"><i class="ri-delete-bin-line"></i>Delete</div>`;
+                            }
+                        }
+                        break;
+                    case 'start':
+                        menuItems = Object.keys(defaultDesktopItems)
+                            .map(name => defaultDesktopItems[name])
+                            .filter(i => i.type === 'app')
+                            .map(app => `<div class="context-item" data-action="launch-app" data-appid="${app.appId}"><i class="${app.icon}"></i>${app.appId.charAt(0).toUpperCase() + app.appId.slice(1)}</div>`)
+                            .join('');
+                        break;
+                    case 'explorer-bg':
+                         menuItems = `<div class="context-item" data-action="create-folder-here"><i class="ri-folder-add-line"></i>New Folder</div>
+                                      <div class="context-item" data-action="create-file-here"><i class="ri-file-add-line"></i>New Text File</div>
+                                      <div class="context-item" data-action="create-file-from-url"><i class="ri-download-cloud-2-line"></i>New File from URL</div>`;
+                        break;
+                }
+                
+                elements.contextMenu.innerHTML = menuItems;
+                elements.contextMenu.style.display = 'block';
+                
+                const menuRect = elements.contextMenu.getBoundingClientRect();
+                const targetRect = target instanceof Element ? target.getBoundingClientRect() : { top: e.clientY, left: e.clientX, height: 0, width: 0 };
+                let top = e.clientY;
+                let left = e.clientX;
+
+                if (type === 'start') {
+                    top = targetRect.top - menuRect.height - 10;
+                    left = targetRect.left;
+                }
+
+                elements.contextMenu.style.left = `${left}px`;
+                elements.contextMenu.style.top = `${top}px`;
+                
+                elements.contextMenu.onclick = (clickE) => {
+                    const actionTarget = clickE.target.closest('.context-item');
+                    if (!actionTarget) return;
+                    const action = actionTarget.dataset.action;
+                    if (action) desktopManager.handleContextMenuAction(action, target, clickE);
+                    elements.contextMenu.style.display = 'none';
+                };
+            },
+            handleContextMenuAction: (action, target, event) => {
+                const path = target?.dataset?.path;
+                const item = path ? utils.findItemByPath(path) : null;
+
+                switch (action) {
+                    case 'create-folder': utils.createFolder('Desktop', 'New Folder'); desktopManager.renderIcons(); break;
+                    case 'create-file': utils.createFile('Desktop', 'New File.txt'); desktopManager.renderIcons(); break;
+                    case 'create-link':
+                        const url = prompt("Enter the URL for the link:");
+                        if (url) {
+                            const name = prompt("Enter a name for the link:", "My Link");
+                            if (name) {
+                                utils.createLink('Desktop', name, url);
+                                desktopManager.renderIcons();
+                            }
+                        }
+                        break;
+                    case 'create-folder-here':
+                        const folderName = prompt("Enter folder name:", "New Folder");
+                        if (folderName) {
+                            utils.createFolder(target.path, folderName);
+                            appManager.apps.explorer.render(target.win, target.path);
+                        }
+                        break;
+                    case 'create-file-here':
+                        const fileName = prompt("Enter file name:", "New File.txt");
+                        if (fileName) {
+                            utils.createFile(target.path, fileName);
+                            appManager.apps.explorer.render(target.win, target.path);
+                        }
+                        break;
+                     case 'create-file-from-url':
+                        const fileUrl = prompt("Enter the direct URL of the file:");
+                        if (fileUrl) {
+                            const newFileName = prompt("Enter a name for this file (e.g., image.jpg):");
+                            if(newFileName) {
+                                utils.createFile(target.path, newFileName, fileUrl);
+                                appManager.apps.explorer.render(target.win, target.path);
+                            }
+                        }
+                        break;
+                    case 'open': if (item) desktopManager.onIconDoubleClick(item, path); break;
+                    case 'delete':
+                        if (confirm(`Are you sure you want to delete ${path.split('/').pop()}?`)) {
+                            if (utils.deleteItem(path)) target.remove();
+                        }
+                        break;
+                    case 'rename':
+                        const nameEl = target.querySelector('.desktop-icon-name');
+                        nameEl.contentEditable = true;
+                        nameEl.classList.add('editing');
+                        nameEl.focus();
+                        document.execCommand('selectAll', false, null);
+                        state.isRenaming = true;
+                        
+                        const onRenameEnd = (e) => {
+                            if (nameEl.contains(e.target)) return;
+                            nameEl.contentEditable = false;
+                            nameEl.classList.remove('editing');
+                            document.removeEventListener('click', onRenameEnd, true);
+                            nameEl.removeEventListener('keydown', onRenameKey);
+                            
+                            const newName = nameEl.textContent.trim();
+                            if (utils.renameItem(path, newName)) {
+                                target.dataset.path = path.substring(0, path.lastIndexOf('/') + 1) + newName;
+                            } else {
+                                nameEl.textContent = path.split('/').pop();
+                            }
+                            state.isRenaming = false;
+                        };
+
+                        const onRenameKey = (e) => { 
+                            if (e.key === 'Enter') { e.preventDefault(); nameEl.blur(); } 
+                            else if (e.key === 'Escape') { nameEl.textContent = path.split('/').pop(); nameEl.blur(); }
+                        };
+                        nameEl.addEventListener('blur', () => onRenameEnd({target: null}));
+                        setTimeout(() => {
+                           document.addEventListener('click', onRenameEnd, true);
+                           nameEl.addEventListener('keydown', onRenameKey);
+                        }, 0);
+                        break;
+                    case 'launch-app': appManager.launch(event.target.closest('.context-item').dataset.appid); break;
+                }
+            },
+            dragElement: (elmnt, e) => {
+                let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+                pos3 = e.clientX; pos4 = e.clientY;
+                document.onmouseup = closeDragElement; document.onmousemove = elementDrag;
+                function elementDrag(e) {
+                    e.preventDefault();
+                    pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY;
+                    pos3 = e.clientX; pos4 = e.clientY;
+                    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+                }
+                function closeDragElement() { document.onmouseup = null; document.onmousemove = null; }
+            }
+        };
+        
+        const core = {
+            init: () => {
+                elements.desktop.style.backgroundImage = `url('${state.background}')`;
+                utils.updateClock();
+                setInterval(utils.updateClock, 1000);
+                setInterval(core.checkAlarms, 1000);
+                desktopManager.init();
+                core.bindEvents();
+                core.renderBookmarks();
+                
+                const hasVisited = localStorage.getItem('hasVisited');
+                if (!hasVisited) {
+                    appManager.launch('editor', 'Desktop/Welcome.txt');
+                    localStorage.setItem('hasVisited', 'true');
+                }
+
+                const loadingOverlay = document.getElementById("loading-overlay");
+                if (loadingOverlay) {
+                    setTimeout(() => loadingOverlay.remove(), 500);
+                }
+            },
+            bindEvents: () => {
+                elements.startBtn.addEventListener('click', e => desktopManager.showContextMenu(e, 'start', elements.startBtn));
+                document.addEventListener('click', (e) => { 
+                    if (!elements.contextMenu.contains(e.target)) { elements.contextMenu.style.display = 'none'; }
+                    if (!e.target.closest('.desktop-icon') && !state.isRenaming) { desktopManager.clearSelectedIcons(); }
+                });
+                elements.contextMenu.addEventListener('click', e => e.stopPropagation());
+                
+                elements.bookmarksBtn.addEventListener('click', core.toggleBookmarksOverlay);
+                elements.closeBookmarks.addEventListener('click', core.toggleBookmarksOverlay);
+                
+                elements.bookmarksOverlay.querySelectorAll('.bookmark-select').forEach(select => {
+                    select.onchange = (e) => {
+                        const url = e.target.value;
+                        if (url) {
+                            appManager.launch('browser', url);
+                            core.toggleBookmarksOverlay();
+                            e.target.value = '';
+                        }
+                    };
+                });
+                
+                elements.addBookmarkForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const nameInput = e.target.elements['new-bookmark-name'];
+                    const urlInput = e.target.elements['new-bookmark-url'];
+                    const name = nameInput.value.trim();
+                    let url = urlInput.value.trim();
+                    if (name && url) {
+                        if (!url.startsWith('http')) url = 'https://' + url;
+                        state.bookmarks.push({ name, url });
+                        utils.saveState();
+                        core.renderBookmarks();
+                        nameInput.value = '';
+                        urlInput.value = '';
+                    }
+                });
+
+                elements.customBookmarksList.addEventListener('click', (e) => {
+                    const deleteBtn = e.target.closest('.delete-bookmark');
+                    if (deleteBtn) {
+                        const index = parseInt(deleteBtn.dataset.index, 10);
+                        state.bookmarks.splice(index, 1);
+                        utils.saveState();
+                        core.renderBookmarks();
+                    } else {
+                        const bookmarkItem = e.target.closest('.bookmark-item');
+                        if (bookmarkItem && bookmarkItem.dataset.url) {
+                            appManager.launch('browser', bookmarkItem.dataset.url);
+                            core.toggleBookmarksOverlay();
+                        }
+                    }
+                });
+
+                elements.goBtn.addEventListener('click', () => {
+                    let url = elements.urlInput.value.trim();
+                    if (url) {
+                        if (!url.startsWith('http')) url = 'https://' + url;
+                        appManager.launch('browser', url);
+                    }
+                });
+                elements.homeBtn.addEventListener('click', () => appManager.launch('browser', config.defaultUrl));
+                elements.alarmStopBtn.addEventListener('click', () => {
+                    elements.alarmModal.style.display = 'none';
+                    elements.alarmSound.pause();
+                    elements.alarmSound.currentTime = 0;
+                });
+            },
+            toggleBookmarksOverlay: () => {
+                elements.bookmarksOverlay.style.display = elements.bookmarksOverlay.style.display === 'flex' ? 'none' : 'flex';
+            },
+            renderBookmarks: () => {
+                elements.customBookmarksList.innerHTML = '';
+                state.bookmarks.forEach((bm, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'bookmark-item';
+                    item.dataset.url = bm.url;
+                    item.innerHTML = `<span>${bm.name}</span><button class="delete-bookmark" data-index="${index}"><i class="ri-close-line"></i></button>`;
+                    elements.customBookmarksList.appendChild(item);
+                });
+            },
+            checkAlarms: () => {
+                if (elements.alarmModal.style.display === 'flex') return;
+                const now = new Date();
+                const day = now.getDay();
+                const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                
+                state.alarms.forEach((alarm) => {
+                    if (alarm.time === currentTime && alarm.lastTriggeredDay !== day) {
+                        elements.alarmModal.style.display = 'flex';
+                        elements.alarmSound.loop = true;
+                        elements.alarmSound.play();
+                        alarm.lastTriggeredDay = day;
+                        utils.saveState();
+                    }
+                });
+            },
+            setBackground: (url, gridEl) => {
+                state.background = url;
+                elements.desktop.style.backgroundImage = `url('${url}')`;
+                utils.saveState();
+                if (gridEl) {
+                    gridEl.querySelector('.selected')?.classList.remove('selected');
+                    const matchingPreset = Array.from(gridEl.children).find(opt => opt.style.backgroundImage.includes(url));
+                    if (matchingPreset) matchingPreset.classList.add('selected');
+                }
+            },
+            updateTaskbar: () => {
+                elements.taskbarApps.innerHTML = "";
+                state.windows.forEach(win => {
+                    const item = document.createElement("button");
+                    item.className = "taskbar-item";
+                    if (win.id === state.activeWindow && !win.isMinimized) item.classList.add("active");
+                    item.innerHTML = `<i class="${win.icon}"></i><span>${win.title}</span>`;
+                    item.onclick = () => {
+                        if (win.isMinimized) windowManager.restore(win.id);
+                        else if (state.activeWindow === win.id) windowManager.minimize(win.id);
+                        else windowManager.activate(win.id);
+                    };
+                    elements.taskbarApps.appendChild(item);
+                });
+            },
+        };
+        
+        document.addEventListener("DOMContentLoaded", core.init);
+        window.miniOS = miniOS;
+    })({});
     </script>
 </body>
 </html>
