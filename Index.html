@@ -213,6 +213,7 @@
 
         const defaultDesktopItems = {
             'File Explorer': { type: 'app', appId: 'explorer', icon: 'ri-folder-line' },
+            'HTML Editor': { type: 'app', appId: 'htmlEditor', icon: 'ri-code-s-slash-line' },
             'Settings': { type: 'app', appId: 'settings', icon: 'ri-settings-3-line' },
             'Calculator': { type: 'app', appId: 'calculator', icon: 'ri-calculator-line' },
             'Clock': { type: 'app', appId: 'clock', icon: 'ri-time-line' },
@@ -587,6 +588,32 @@
                         textarea.addEventListener('input', () => { file.content = textarea.value; utils.saveState(); });
                     }
                 },
+                htmlEditor: {
+                    launch: () => {
+                        const win = windowManager.create({
+                            title: 'HTML Editor', icon: 'ri-code-s-slash-line', className: 'html-editor-window',
+                            width: 700, height: 500,
+                            content: `
+                                <div style="display: flex; flex-direction: column; height: 100%; background: #fff;">
+                                    <div style="padding: 5px; background: #f0f0f0; border-bottom: 1px solid #ddd; flex-shrink: 0;">
+                                        <button class="run-html-btn" style="padding: 5px 10px; border-radius: 4px; border: 1px solid #ccc; background: #fff; cursor: pointer;">Run</button>
+                                    </div>
+                                    <textarea class="html-editor-content" style="flex: 1; width: 100%; height: 100%; border: none; outline: none; padding: 10px; font-family: var(--font-family-mono); resize: none;"></textarea>
+                                </div>`
+                        });
+
+                        const runBtn = win.element.querySelector('.run-html-btn');
+                        const textarea = win.element.querySelector('.html-editor-content');
+                        
+                        textarea.value = `<!DOCTYPE html>\n<html>\n<head>\n    <title>My Page</title>\n</head>\n<body>\n    <h1>Hello, World!</h1>\n</body>\n</html>`;
+
+                        runBtn.onclick = () => {
+                            const htmlContent = textarea.value;
+                            const dataUri = 'data:text/html,' + encodeURIComponent(htmlContent);
+                            appManager.launch('browser', dataUri);
+                        };
+                    }
+                },
                 imageViewer: {
                     launch: (path) => {
                         const file = utils.findItemByPath(path);
@@ -869,6 +896,14 @@
                                 <button id="set-custom-bg-btn">Set Background</button>
                             </div>
                             <div class="settings-section">
+                                <h3>Add Desktop Icons</h3>
+                                <p>Add an application shortcut to your desktop.</p>
+                                <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                                    <select id="add-app-select" style="flex: 1; padding: 8px;"></select>
+                                    <button id="add-app-btn">Add to Desktop</button>
+                                </div>
+                            </div>
+                            <div class="settings-section">
                                 <h3>System</h3>
                                 <p>Reset the desktop to its original state. This will remove all user-created files and folders from the desktop.</p>
                                 <button id="reset-desktop-btn" style="background-color: var(--error); color: white;">Reset Desktop</button>
@@ -886,6 +921,42 @@
                             const url = contentEl.querySelector('#custom-bg-url').value.trim();
                             if (url) core.setBackground(url, bgGrid);
                         };
+
+                        const addAppSelect = contentEl.querySelector('#add-app-select');
+                        const addAppBtn = contentEl.querySelector('#add-app-btn');
+
+                        const populateAddAppSelect = () => {
+                            addAppSelect.innerHTML = '';
+                            const desktopApps = Object.keys(state.fileSystem.Desktop.children);
+                            const availableApps = Object.keys(defaultDesktopItems).filter(appName => 
+                                defaultDesktopItems[appName].type === 'app' && !desktopApps.includes(appName)
+                            );
+                            
+                            if (availableApps.length === 0) {
+                                addAppSelect.innerHTML = '<option>All apps on desktop</option>';
+                                addAppBtn.disabled = true;
+                            } else {
+                                availableApps.forEach(appName => {
+                                    const option = document.createElement('option');
+                                    option.value = appName;
+                                    option.textContent = appName;
+                                    addAppSelect.appendChild(option);
+                                });
+                                addAppBtn.disabled = false;
+                            }
+                        };
+
+                        addAppBtn.onclick = () => {
+                            const appName = addAppSelect.value;
+                            if (appName && defaultDesktopItems[appName]) {
+                                state.fileSystem.Desktop.children[appName] = JSON.parse(JSON.stringify(defaultDesktopItems[appName]));
+                                desktopManager.createIcon(appName, state.fileSystem.Desktop.children[appName]);
+                                utils.saveState();
+                                utils.showNotification(`Added ${appName} to desktop.`, 'success');
+                                populateAddAppSelect();
+                            }
+                        };
+
                         contentEl.querySelector('#reset-desktop-btn').onclick = () => {
                             if (confirm('Are you sure you want to reset the desktop? All user-created files and folders on the desktop will be permanently removed.')) {
                                 state.fileSystem.Desktop.children = JSON.parse(JSON.stringify(defaultDesktopItems));
@@ -893,8 +964,11 @@
                                 utils.saveState();
                                 desktopManager.renderIcons();
                                 utils.showNotification('Desktop has been reset.', 'success');
+                                populateAddAppSelect();
                             }
                         };
+
+                        populateAddAppSelect();
                     }
                 },
                 browser: {
@@ -902,7 +976,7 @@
                          windowManager.create({
                             title: 'Browser', icon: 'ri-global-line',
                             width: config.defaultWindowSize.width, height: config.defaultWindowSize.height, refreshable: true, fullscreenable: true,
-                            content: `<iframe src="${url}" style="width:100%; height:100%; border:none;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>`
+                            content: `<iframe src="${url}" style="width:100%; height:100%; border:none;"></iframe>`
                         });
                     }
                 },
