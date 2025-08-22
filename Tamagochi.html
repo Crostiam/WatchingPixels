@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced Tamagotchi (Enhanced)</title>
+    <style>
+      :root {
+        --bg-dark: #121212;
+        --bg-darker: #0a0a0a;
+        --bg-darkest: #050505;
+        --text-light: #e0e0e0;
+        --text-lighter: #ffffff;
+        --accent: #bb86fc;
+        --accent-dark: #3700b3;
+        --success: #03dac6;
+        --danger: #cf6679;
+        --warning: #ffab00;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-dark);
+        color: var(--text-light);
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        overflow: hidden;
+        user-select: none;
+      }
+
+      /* Layout Grid */
+      .game-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: auto 1fr auto;
+        height: 100vh;
+        gap: 10px;
+        padding: 10px;
+      }
+
+      .header {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: var(--bg-darker);
+        border-radius: 10px;
+      }
+
+      .pet-zone {
+        grid-column: 1;
+        grid-row: 2;
+        background-color: var(--bg-darker);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .action-zones {
+        grid-column: 2;
+        grid-row: 2;
+        display: grid;
+        grid-template-rows: 1fr 1fr 1fr;
+        gap: 10px;
+      }
+
+      .action-zone {
+        background-color: var(--bg-darker);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .stats-zone {
+        grid-column: 3;
+        grid-row: 2;
+        background-color: var(--bg-darker);
+        border-radius: 10px;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .upgrades-zone {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        background-color: var(--bg-darker);
+        border-radius: 10px;
+        padding: 15px;
+        display: flex;
+        gap: 15px;
+        overflow-x: auto;
+        height: 200px;
+      }
+
+      /* Pet Zone Styles */
+      .pet-display {
+        font-size: 10rem;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+      }
+
+      .pet-name {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+        color: var(--accent);
+      }
+
+      .pet-age {
+        font-size: 1rem;
+        color: var(--text-light);
+        opacity: 0.8;
+      }
+
+      .pet-mood {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 2rem;
+      }
+
+      .evolution-progress {
+        position: absolute;
+        bottom: 20px;
+        width: 80%;
+        height: 5px;
+        background-color: var(--bg-darkest);
+        border-radius: 5px;
+        overflow: hidden;
+      }
+
+      .evolution-progress-fill {
+        height: 100%;
+        background-color: var(--accent);
+        width: 0%;
+        transition: width 0.5s;
+      }
+
+      /* Action Zone Styles */
+      .zone-icon {
+        font-size: 4rem;
+        margin-bottom: 15px;
+      }
+
+      .zone-label {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+      }
+
+      .zone-eat {
+        border: 2px solid var(--success);
+      }
+
+      .zone-play {
+        border: 2px solid var(--accent);
+      }
+
+      .zone-sleep {
+        border: 2px solid var(--accent-dark);
+      }
+
+      .zone-btn {
+        padding: 8px 15px;
+        background-color: var(--bg-dark);
+        border: 1px solid currentColor;
+        border-radius: 5px;
+        color: inherit;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: all 0.2s;
+      }
+
+      .zone-btn:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .zone-eat .zone-btn {
+        color: var(--success);
+      }
+
+      .zone-play .zone-btn {
+        color: var(--accent);
+      }
+
+      .zone-sleep .zone-btn {
+        color: var(--accent-dark);
+      }
+
+      .caretaker-indicator {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 1.5rem;
+      }
+
+      /* Stats Zone Styles */
+      .stat {
+        margin-bottom: 15px;
+      }
+
+      .stat-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+      }
+
+      .stat-name {
+        font-weight: bold;
+      }
+
+      .stat-value {
+        color: var(--accent);
+      }
+
+      .stat-bar {
+        height: 10px;
+        background-color: var(--bg-darkest);
+        border-radius: 5px;
+        overflow: hidden;
+      }
+
+      .stat-fill {
+        height: 100%;
+        transition: width 0.3s;
+      }
+
+      .hunger-fill {
+        background-color: var(--danger);
+      }
+
+      .happiness-fill {
+        background-color: var(--accent);
+      }
+
+      .energy-fill {
+        background-color: var(--success);
+      }
+
+      /* Upgrades Zone Styles */
+      .upgrade-category {
+        min-width: 250px;
+        background-color: var(--bg-darkest);
+        border-radius: 8px;
+        padding: 10px;
+      }
+
+      .category-title {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        color: var(--accent);
+        border-bottom: 1px solid #333;
+        padding-bottom: 5px;
+      }
+
+      .upgrade-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #333;
+      }
+
+      .upgrade-item:last-child {
+        border-bottom: none;
+      }
+
+      .upgrade-info {
+        flex: 1;
+      }
+
+      .upgrade-name {
+        font-weight: bold;
+      }
+
+      .upgrade-desc {
+        font-size: 0.8rem;
+        opacity: 0.7;
+      }
+
+      .upgrade-btn {
+        background-color: var(--accent);
+        color: var(--bg-darkest);
+        border: none;
+        border-radius: 5px;
+        padding: 5px 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .upgrade-btn:hover {
+        background-color: var(--accent-dark);
+      }
+
+      .upgrade-btn:disabled {
+        background-color: #333;
+        color: #666;
+        cursor: not-allowed;
+      }
+
+      /* Minigame Styles */
+      .minigame-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+
+      .minigame {
+        background-color: var(--bg-darker);
+        padding: 2rem;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 500px;
+        text-align: center;
+      }
+
+      .minigame-title {
+        color: var(--accent);
+        margin-bottom: 1rem;
+      }
+
+      .minigame-content {
+        margin-bottom: 1.5rem;
+      }
+
+      .minigame-btn {
+        background-color: var(--accent);
+        color: var(--bg-darkest);
+        border: none;
+        border-radius: 8px;
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+        cursor: pointer;
+        margin: 0.5rem;
+        transition: all 0.2s;
+      }
+
+      .minigame-btn:hover {
+        background-color: var(--accent-dark);
+      }
+
+      /* Specific minigames */
+      .click-game {
+        background-color: #333;
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .click-target {
+        width: 60px;
+        height: 60px;
+        background-color: var(--danger);
+        border-radius: 50%;
+        position: absolute;
+        cursor: pointer;
+      }
+
+      .memory-game {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      .memory-card {
+        aspect-ratio: 1;
+        background-color: var(--accent-dark);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        cursor: pointer;
+      }
+
+      .memory-card.flipped {
+        background-color: var(--bg-dark);
+      }
+
+      .typing-game input {
+        padding: 0.8rem;
+        font-size: 1rem;
+        width: 80%;
+        background-color: var(--bg-dark);
+        border: 1px solid var(--accent);
+        color: var(--text-light);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+      }
+
+      .reaction-game {
+        height: 200px;
+        background-color: var(--bg-darkest);
+        border-radius: 10px;
+        position: relative;
+        margin-bottom: 1rem;
+      }
+
+      .reaction-box {
+        width: 80px;
+        height: 80px;
+        background-color: var(--success);
+        position: absolute;
+        display: none;
+      }
+
+      .sequence-game {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 1rem;
+      }
+
+      .sequence-btn {
+        width: 50px;
+        height: 50px;
+        background-color: var(--accent-dark);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        cursor: pointer;
+      }
+
+      .sequence-btn.active {
+        background-color: var(--accent);
+      }
+
+      .balance-game {
+        height: 20px;
+        background-color: var(--bg-darkest);
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .balance-ball {
+        width: 20px;
+        height: 20px;
+        background-color: var(--danger);
+        border-radius: 50%;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      /* Menu Styles */
+      .menu-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--bg-darker);
+        z-index: 200;
+      }
+
+      .menu-title {
+        font-size: 3rem;
+        margin-bottom: 2rem;
+        color: var(--accent);
+        text-shadow: 0 0 10px rgba(187, 134, 252, 0.5);
+      }
+
+      .pet-selection {
+        display: flex;
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .pet-option {
+        width: 120px;
+        height: 120px;
+        font-size: 5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--bg-dark);
+        border: 2px solid var(--accent);
+        border-radius: 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .pet-option:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 20px var(--accent);
+      }
+
+      .start-btn {
+        padding: 1rem 2rem;
+        font-size: 1.2rem;
+        background-color: var(--accent);
+        color: var(--bg-darker);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .start-btn:hover {
+        background-color: var(--accent-dark);
+        color: var(--text-light);
+        transform: scale(1.05);
+      }
+
+      /* Messages */
+      .message {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--accent-dark);
+        color: var(--text-light);
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+        z-index: 30;
+      }
+
+      .message.show {
+        opacity: 1;
+      }
+
+      /* Evolution */
+      .evolution {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+      }
+
+      .evolution-content {
+        background-color: var(--bg-darker);
+        padding: 2rem;
+        border-radius: 15px;
+        text-align: center;
+        max-width: 400px;
+      }
+
+      .evolution-pet {
+        font-size: 8rem;
+        margin: 1rem 0;
+      }
+
+      /* Money display */
+      .money-display {
+        font-size: 1.2rem;
+        color: var(--warning);
+      }
+
+      .money-display span {
+        font-weight: bold;
+      }
+
+      /* Caretaker timer */
+      .caretaker-timer {
+        font-size: 0.8rem;
+        margin-top: 5px;
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Menu Screen -->
+    <div class="menu-container" id="menu">
+      <h1 class="menu-title">Advanced Tamagotchi</h1>
+      <div class="pet-selection">
+        <div class="pet-option" data-pet="🐉" data-name="Dragon">🐉</div>
+        <div class="pet-option" data-pet="🦇" data-name="Bat">🦇</div>
+        <div class="pet-option" data-pet="🐺" data-name="Wolf">🐺</div>
+      </div>
+      <button class="start-btn" id="startBtn">Start Game</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="game-container" id="game" style="display: none;">
+      <!-- Header -->
+      <div class="header">
+        <div class="pet-name" id="petNameDisplay">Pet Name</div>
+        <div class="money-display">💰 <span id="money">0</span></div>
+      </div>
+
+      <!-- Pet Zone -->
+      <div class="pet-zone">
+        <div class="pet-mood" id="petMood">😊</div>
+        <div class="pet-display" id="petDisplay">🐉</div>
+        <div class="pet-name" id="petName">Dragon</div>
+        <div class="pet-age" id="petAge">Age: 0 days</div>
+        <div class="evolution-progress">
+          <div class="evolution-progress-fill" id="evolutionProgress"></div>
+        </div>
+      </div>
+
+      <!-- Action Zones -->
+      <div class="action-zones">
+        <div class="action-zone zone-eat">
+          <div class="caretaker-indicator" id="eatCaretakerIndicator" style="display: none;">🤖</div>
+          <div class="zone-icon">🍗</div>
+          <div class="zone-label">Eat</div>
+          <button class="zone-btn" id="eatBtn">Feed</button>
+          <button class="zone-btn" id="hireEatCaretaker">Hire Caretaker (50💰)</button>
+          <div class="caretaker-timer" id="eatCaretakerTimer" style="display: none;">5:00</div>
+        </div>
+
+        <div class="action-zone zone-play">
+          <div class="caretaker-indicator" id="playCaretakerIndicator" style="display: none;">🤖</div>
+          <div class="zone-icon">🎮</div>
+          <div class="zone-label">Play</div>
+          <button class="zone-btn" id="playBtn">Play</button>
+          <button class="zone-btn" id="hirePlayCaretaker">Hire Caretaker (50💰)</button>
+          <div class="caretaker-timer" id="playCaretakerTimer" style="display: none;">5:00</div>
+        </div>
+
+        <div class="action-zone zone-sleep">
+          <div class="caretaker-indicator" id="sleepCaretakerIndicator" style="display: none;">🤖</div>
+          <div class="zone-icon">🛏️</div>
+          <div class="zone-label">Sleep</div>
+          <button class="zone-btn" id="sleepBtn">Sleep</button>
+          <button class="zone-btn" id="hireSleepCaretaker">Hire Caretaker (50💰)</button>
+          <div class="caretaker-timer" id="sleepCaretakerTimer" style="display: none;">5:00</div>
+        </div>
+      </div>
+
+      <!-- Stats Zone -->
+      <div class="stats-zone">
+        <h3>Pet Stats</h3>
+        <div class="stat">
+          <div class="stat-header">
+            <span class="stat-name">Hunger</span>
+            <span class="stat-value" id="hungerValue">100%</span>
+          </div>
+          <div class="stat-bar">
+            <div class="stat-fill hunger-fill" id="hungerBar" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-header">
+            <span class="stat-name">Happiness</span>
+            <span class="stat-value" id="happinessValue">100%</span>
+          </div>
+          <div class="stat-bar">
+            <div class="stat-fill happiness-fill" id="happinessBar" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-header">
+            <span class="stat-name">Energy</span>
+            <span class="stat-value" id="energyValue">100%</span>
+          </div>
+          <div class="stat-bar">
+            <div class="stat-fill energy-fill" id="energyBar" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-header">
+            <span class="stat-name">Health</span>
+            <span class="stat-value" id="healthValue">100%</span>
+          </div>
+          <div class="stat-bar">
+            <div class="stat-fill hunger-fill" id="healthBar" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <h3 style="margin-top: 20px;">Pet Status</h3>
+        <div id="petStatus">Healthy and happy!</div>
+        <div id="evolutionHint" style="margin-top: 10px; color: var(--accent); font-size: 0.9rem;"></div>
+      </div>
+
+      <!-- Upgrades Zone -->
+      <div class="upgrades-zone">
+        <div class="upgrade-category">
+          <div class="category-title">Food Upgrades</div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Better Food</div>
+              <div class="upgrade-desc">+10% hunger recovery</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="food1" data-cost="50">50💰</button>
+          </div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Gourmet Meals</div>
+              <div class="upgrade-desc">+25% hunger recovery</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="food2" data-cost="150">150💰</button>
+          </div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Feast</div>
+              <div class="upgrade-desc">+50% hunger recovery</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="food3" data-cost="300">300💰</button>
+          </div>
+        </div>
+
+        <div class="upgrade-category">
+          <div class="category-title">Play Upgrades</div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Fun Toy</div>
+              <div class="upgrade-desc">+10% happiness recovery</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="play1" data-cost="50">50💰</button>
+          </div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Game Console</div>
+              <div class="upgrade-desc">+25% happiness recovery</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="play2" data-cost="150">150💰</button>
+          </div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Theme Park</div>
+              <div class="upgrade-desc">+50% happiness recovery</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="play3" data-cost="300">300💰</button>
+          </div>
+        </div>
+
+        <div class="upgrade-category">
+          <div class="category-title">Sleep Upgrades</div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Comfy Bed</div>
+              <div class="upgrade-desc">+10% energy recovery</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="sleep1" data-cost="50">50💰</button>
+          </div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Luxury Bed</div>
+              <div class="upgrade-desc">+25% energy recovery</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="sleep2" data-cost="150">150💰</button>
+          </div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Sleep Chamber</div>
+              <div class="upgrade-desc">+50% energy recovery</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="sleep3" data-cost="300">300💰</button>
+          </div>
+        </div>
+
+        <div class="upgrade-category">
+          <div class="category-title">Caretaker Upgrades</div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Caretaker Duration</div>
+              <div class="upgrade-desc">+1 minute to caretakers</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="caretaker1" data-cost="200">200💰</button>
+          </div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Caretaker Efficiency</div>
+              <div class="upgrade-desc">+20% effectiveness</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="caretaker2" data-cost="300">300💰</button>
+          </div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Caretaker Discount</div>
+              <div class="upgrade-desc">-25% hiring cost</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="caretaker3" data-cost="400">400💰</button>
+          </div>
+        </div>
+
+        <div class="upgrade-category">
+          <div class="category-title">Health Upgrades</div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Vitamins</div>
+              <div class="upgrade-desc">Slows stat decay by 10%</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="health1" data-cost="100">100💰</button>
+          </div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Medicine</div>
+              <div class="upgrade-desc">Slows stat decay by 25%</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="health2" data-cost="250">250💰</button>
+          </div>
+          <div class="upgrade-item">
+            <div class="upgrade-info">
+              <div class="upgrade-name">Immune Boost</div>
+              <div class="upgrade-desc">Slows stat decay by 50%</div>
+            </div>
+            <button class="upgrade-btn" data-upgrade="health3" data-cost="500">500💰</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="message" id="message"></div>
+    </div>
+
+    <!-- Minigame Screens -->
+    <div class="minigame-container" id="minigameContainer">
+      <div class="minigame" id="minigameContent">
+        <!-- Minigame content will be inserted here -->
+      </div>
+    </div>
+
+    <!-- Evolution Screen -->
+    <div class="evolution" id="evolutionScreen">
+      <div class="evolution-content">
+        <h2>Your pet is evolving!</h2>
+        <div class="evolution-pet" id="evolutionPet"></div>
+        <p id="evolutionText"></p>
+        <button class="minigame-btn" id="continueBtn">Continue</button>
+      </div>
+    </div>
+
+    <script>
+      // Game state
+      const gameState = {
+        pet: '🐉',
+        petName: 'Dragon',
+        petStage: 0,
+        petStages: {
+          '🐉': ['🐉', '🐲', '🔥'],
+          '🦇': ['🦇', '🧛', '🧛‍♂️'],
+          '🐺': ['🐺', '🐕‍🦺', '🐺‍⬛']
+        },
+        hunger: 100,
+        happiness: 100,
+        energy: 100,
+        health: 100,
+        money: 0,
+        age: 0,
+        upgrades: {
+          food: 1,
+          play: 1,
+          sleep: 1,
+          caretaker: {
+            duration: 5,
+            efficiency: 1,
+            cost: 50
+          },
+          health: 1
+        },
+        caretakers: {
+          eat: { active: false, timeLeft: 0 },
+          play: { active: false, timeLeft: 0 },
+          sleep: { active: false, timeLeft: 0 }
+        },
+        inAction: false,
+        gameActive: false,
+        statDecayPaused: false,
+        evolutionProgress: 0,
+        loopHandle: null
+      };
+
+      // DOM elements
+      const menu = document.getElementById('menu');
+      const game = document.getElementById('game');
+      const petDisplay = document.getElementById('petDisplay');
+      const petName = document.getElementById('petName');
+      const petNameDisplay = document.getElementById('petNameDisplay');
+      const petAge = document.getElementById('petAge');
+      const petMood = document.getElementById('petMood');
+      const petStatus = document.getElementById('petStatus');
+      const evolutionHint = document.getElementById('evolutionHint');
+      const moneyDisplay = document.getElementById('money');
+      const hungerBar = document.getElementById('hungerBar');
+      const happinessBar = document.getElementById('happinessBar');
+      const energyBar = document.getElementById('energyBar');
+      const healthBar = document.getElementById('healthBar');
+      const hungerValue = document.getElementById('hungerValue');
+      const happinessValue = document.getElementById('happinessValue');
+      const energyValue = document.getElementById('energyValue');
+      const healthValue = document.getElementById('healthValue');
+      const message = document.getElementById('message');
+      const evolutionProgress = document.getElementById('evolutionProgress');
+
+      // Action buttons
+      const eatBtn = document.getElementById('eatBtn');
+      const playBtn = document.getElementById('playBtn');
+      const sleepBtn = document.getElementById('sleepBtn');
+
+      // Caretaker elements
+      const eatCaretakerIndicator = document.getElementById('eatCaretakerIndicator');
+      const playCaretakerIndicator = document.getElementById('playCaretakerIndicator');
+      const sleepCaretakerIndicator = document.getElementById('sleepCaretakerIndicator');
+      const eatCaretakerTimer = document.getElementById('eatCaretakerTimer');
+      const playCaretakerTimer = document.getElementById('playCaretakerTimer');
+      const sleepCaretakerTimer = document.getElementById('sleepCaretakerTimer');
+
+      // Caretaker hire buttons
+      const hireEatCaretaker = document.getElementById('hireEatCaretaker');
+      const hirePlayCaretaker = document.getElementById('hirePlayCaretaker');
+      const hireSleepCaretaker = document.getElementById('hireSleepCaretaker');
+
+      // Minigame elements
+      const minigameContainer = document.getElementById('minigameContainer');
+      const minigameContent = document.getElementById('minigameContent');
+
+      // Evolution elements
+      const evolutionScreen = document.getElementById('evolutionScreen');
+      const evolutionPet = document.getElementById('evolutionPet');
+      const evolutionText = document.getElementById('evolutionText');
+      const continueBtn = document.getElementById('continueBtn');
+
+      // Minigame cleanup hook to avoid leaks (intervals/listeners)
+      let minigameCleanup = null;
+
+      // Pet selection
+      const petOptions = document.querySelectorAll('.pet-option');
+      petOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          petOptions.forEach(opt => opt.style.borderColor = 'var(--accent)');
+          option.style.borderColor = 'var(--success)';
+          gameState.pet = option.dataset.pet;
+          gameState.petName = option.dataset.name;
+          petDisplay.textContent = gameState.petStages[gameState.pet][0];
+          petName.textContent = gameState.petName;
+        });
+      });
+
+      // Start game
+      document.getElementById('startBtn').addEventListener('click', () => {
+        menu.style.opacity = '0';
+        setTimeout(() => {
+          menu.style.display = 'none';
+          game.style.display = 'grid';
+          startGame();
+        }, 300);
+      });
+
+      // Action buttons
+      eatBtn.addEventListener('click', () => startMinigame('eat'));
+      playBtn.addEventListener('click', () => startMinigame('play'));
+      sleepBtn.addEventListener('click', () => startMinigame('sleep'));
+
+      // Caretaker hire buttons
+      hireEatCaretaker.addEventListener('click', () => hireCaretaker('eat'));
+      hirePlayCaretaker.addEventListener('click', () => hireCaretaker('play'));
+      hireSleepCaretaker.addEventListener('click', () => hireCaretaker('sleep'));
+
+      // Upgrade buttons
+      document.querySelectorAll('.upgrade-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const upgradeId = this.dataset.upgrade;
+          const cost = parseInt(this.dataset.cost);
+
+          if (gameState.money >= cost) {
+            gameState.money -= cost;
+            moneyDisplay.textContent = gameState.money;
+
+            // Apply upgrade
+            if (upgradeId.startsWith('food')) {
+              gameState.upgrades.food = 1 + (0.1 * parseInt(upgradeId.replace('food', '')));
+            } else if (upgradeId.startsWith('play')) {
+              gameState.upgrades.play = 1 + (0.1 * parseInt(upgradeId.replace('play', '')));
+            } else if (upgradeId.startsWith('sleep')) {
+              gameState.upgrades.sleep = 1 + (0.1 * parseInt(upgradeId.replace('sleep', '')));
+            } else if (upgradeId.startsWith('caretaker')) {
+              const caretakerUpgrade = parseInt(upgradeId.replace('caretaker', ''));
+              if (caretakerUpgrade === 1) {
+                gameState.upgrades.caretaker.duration += 1;
+              } else if (caretakerUpgrade === 2) {
+                gameState.upgrades.caretaker.efficiency = parseFloat((gameState.upgrades.caretaker.efficiency + 0.2).toFixed(2));
+              } else if (caretakerUpgrade === 3) {
+                gameState.upgrades.caretaker.cost = Math.max(1, Math.floor(gameState.upgrades.caretaker.cost * 0.75));
+              }
+            } else if (upgradeId.startsWith('health')) {
+              gameState.upgrades.health = 1 + (0.1 * parseInt(upgradeId.replace('health', '')));
+            }
+
+            this.textContent = '✔️';
+            this.disabled = true;
+            showMessage(`Upgrade purchased!`);
+
+            // Update caretaker hire costs text
+            updateCaretakerButtons();
+          } else {
+            showMessage("Not enough money!");
+          }
+        });
+      });
+
+      function updateCaretakerButtons() {
+        const cost = gameState.upgrades.caretaker.cost;
+        hireEatCaretaker.textContent = `Hire Caretaker (${cost}💰)`;
+        hirePlayCaretaker.textContent = `Hire Caretaker (${cost}💰)`;
+        hireSleepCaretaker.textContent = `Hire Caretaker (${cost}💰)`;
+      }
+
+      // Map caretaker type to affected stat key
+      function statKeyForType(type) {
+        return type === 'eat' ? 'hunger' : type === 'play' ? 'happiness' : 'energy';
+      }
+
+      function hireCaretaker(type) {
+        const cost = gameState.upgrades.caretaker.cost;
+
+        if (gameState.money >= cost) {
+          gameState.money -= cost;
+          moneyDisplay.textContent = gameState.money;
+
+          gameState.caretakers[type].active = true;
+          gameState.caretakers[type].timeLeft = gameState.upgrades.caretaker.duration * 60; // seconds
+
+          // Show caretaker indicator and timer
+          document.getElementById(`${type}CaretakerIndicator`).style.display = 'block';
+          document.getElementById(`${type}CaretakerTimer`).style.display = 'block';
+
+          showMessage(`Hired a ${type} caretaker for ${gameState.upgrades.caretaker.duration} minutes!`);
+
+          // Ensure the corresponding stat is at least 50% at start
+          const key = statKeyForType(type);
+          if (gameState[key] < 50) {
+            gameState[key] = 50;
+            updateStats();
+          }
+        } else {
+          showMessage("Not enough money!");
+        }
+      }
+
+      function updateCaretakerTimers() {
+        Object.keys(gameState.caretakers).forEach(type => {
+          const caretaker = gameState.caretakers[type];
+          if (caretaker.active) {
+            caretaker.timeLeft = Math.max(0, caretaker.timeLeft - 1);
+
+            // Update timer display
+            const minutes = Math.floor(caretaker.timeLeft / 60);
+            const seconds = caretaker.timeLeft % 60;
+            document.getElementById(`${type}CaretakerTimer`).textContent =
+              `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+            // Apply caretaker effect every 10 seconds
+            if (caretaker.timeLeft % 10 === 0) {
+              const effect = 5 * gameState.upgrades.caretaker.efficiency * 0.9;
+              if (type === 'eat') {
+                gameState.hunger = Math.min(100, gameState.hunger + effect);
+              } else if (type === 'play') {
+                gameState.happiness = Math.min(100, gameState.happiness + effect);
+              } else if (type === 'sleep') {
+                gameState.energy = Math.min(100, gameState.energy + effect);
+              }
+            }
+
+            // Caretaker ends
+            if (caretaker.timeLeft <= 0) {
+              caretaker.active = false;
+              document.getElementById(`${type}CaretakerIndicator`).style.display = 'none';
+              document.getElementById(`${type}CaretakerTimer`).style.display = 'none';
+              showMessage(`Your ${type} caretaker's time is up!`);
+
+              // Ensure corresponding stat is at least 50% at end
+              const key = statKeyForType(type);
+              if (gameState[key] < 50) {
+                gameState[key] = 50;
+                updateStats();
+              }
+            }
+          }
+        });
+      }
+
+      // Minigames
+      function startMinigame(action) {
+        if (gameState.inAction) return;
+
+        // Clean up any previous minigame artifacts just in case
+        if (typeof miniggameCleanup === 'function') {
+          try { minigameCleanup(); } catch {}
+          minigameCleanup = null;
+        }
+
+        gameState.inAction = true;
+        gameState.statDecayPaused = true;
+        minigameCleanup = null;
+
+        const minigames = {
+          'eat': ['click', 'memory', 'reaction', 'balance'],
+          'play': ['memory', 'typing', 'sequence', 'click'],
+          'sleep': ['typing', 'click', 'balance', 'reaction']
+        };
+        const selectedGame = minigames[action][Math.floor(Math.random() * minigames[action].length)];
+
+        minigameContent.innerHTML = '';
+        minigameContainer.style.display = 'flex';
+
+        switch (selectedGame) {
+          case 'click': setupClickGame(action); break;
+          case 'memory': setupMemoryGame(action); break;
+          case 'typing': setupTypingGame(action); break;
+          case 'reaction': setupReactionGame(action); break;
+          case 'sequence': setupSequenceGame(action); break;
+          case 'balance': setupBalanceGame(action); break;
+        }
+      }
+
+      function setupClickGame(action) {
+        minigameContent.innerHTML = `
+          <h3 class="minigame-title">Quick Click!</h3>
+          <p class="minigame-content">Click the target 15 times as fast as you can!</p>
+          <div class="click-game" id="clickGame">
+            <div class="click-target" id="clickTarget"></div>
+          </div>
+          <p id="clickCounter">0/15 clicks</p>
+        `;
+
+        const clickGame = document.getElementById('clickGame');
+        const clickTarget = document.getElementById('clickTarget');
+        const clickCounter = document.getElementById('clickCounter');
+
+        let clicks = 0;
+        const maxClicks = 15;
+        let finished = false;
+
+        function moveTarget() {
+          if (finished) return;
+          const gameRect = clickGame.getBoundingClientRect();
+          const maxX = gameRect.width - 60;
+          const maxY = gameRect.height - 60;
+
+          if (clicks === 0) {
+            clickTarget.style.left = `${gameRect.width / 2 - 30}px`;
+            clickTarget.style.top = `${gameRect.height / 2 - 30}px`;
+          } else {
+            const randomX = Math.floor(Math.random() * maxX);
+            const randomY = Math.floor(Math.random() * maxY);
+            clickTarget.style.left = `${randomX}px`;
+            clickTarget.style.top = `${randomY}px`;
+          }
+        }
+
+        const onClick = () => {
+          if (finished) return;
+          clicks++;
+          clickCounter.textContent = `${clicks}/${maxClicks} clicks`;
+          if (clicks >= maxClicks) {
+            finished = true;
+            finishMinigame(true, action);
+          } else {
+            moveTarget();
+          }
+        };
+
+        clickTarget.addEventListener('click', onClick);
+        moveTarget();
+
+        minigameCleanup = () => {
+          clickTarget.removeEventListener('click', onClick);
+        };
+      }
+
+      function setupMemoryGame(action) {
+        const symbols = ['🌟', '🌙', '☄️', '⚡', '💎', '🔮', '🌌', '🌀'];
+        const cards = [...symbols, ...symbols];
+
+        // Shuffle
+        for (let i = cards.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [cards[i], cards[j]] = [cards[j], cards[i]];
+        }
+
+        minigameContent.innerHTML = `
+          <h3 class="minigame-title">Memory Match!</h3>
+          <p class="minigame-content">Find all matching pairs</p>
+          <div class="memory-game" id="memoryGame"></div>
+          <p id="pairsCounter">0/8 pairs found</p>
+        `;
+
+        const memoryGame = document.getElementById('memoryGame');
+        const pairsCounter = document.getElementById('pairsCounter');
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let finished = false;
+
+        cards.forEach((symbol, index) => {
+          const card = document.createElement('div');
+          card.className = 'memory-card';
+          card.dataset.index = index;
+          card.dataset.symbol = symbol;
+          card.textContent = '?';
+
+          const onCardClick = () => {
+            if (finished) return;
+            if (flippedCards.length >= 2 || card.classList.contains('flipped')) return;
+            card.classList.add('flipped');
+            card.textContent = symbol;
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+              if (flippedCards[0].dataset.symbol === flippedCards[1].dataset.symbol) {
+                // Match
+                flippedCards.forEach(c => { c.style.visibility = 'hidden'; });
+                flippedCards = [];
+                matchedPairs++;
+                pairsCounter.textContent = `${matchedPairs}/8 pairs found`;
+
+                if (matchedPairs === symbols.length) {
+                  finished = true;
+                  setTimeout(() => finishMinigame(true, action), 300);
+                }
+              } else {
+                setTimeout(() => {
+                  flippedCards.forEach(c => { c.classList.remove('flipped'); c.textContent = '?'; });
+                  flippedCards = [];
+                }, 600);
+              }
+            }
+          };
+
+          card.addEventListener('click', onCardClick);
+          memoryGame.appendChild(card);
+        });
+
+        minigameCleanup = () => {
+          // Remove all listeners by clearing container
+          memoryGame.innerHTML = '';
+        };
+      }
+
+      function setupTypingGame(action) {
+        const words = [
+          "shadow", "moonlight", "vampire", "dragon",
+          "werewolf", "phantom", "ghost", "witch"
+        ];
+        const targetWord = words[Math.floor(Math.random() * words.length)];
+
+        minigameContent.innerHTML = `
+          <h3 class="minigame-title">Quick Typing!</h3>
+          <p class="minigame-content">Type the word below as fast as you can:</p>
+          <p style="font-size: 1.5rem; letter-spacing: 3px;">${targetWord.toUpperCase()}</p>
+          <input type="text" id="typingInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <button class="minigame-btn" id="typingSubmit">Submit</button>
+        `;
+
+        const typingInput = document.getElementById('typingInput');
+        const typingSubmit = document.getElementById('typingSubmit');
+        typingInput.focus();
+
+        const onSubmit = () => {
+          if (typingInput.value.toLowerCase() === targetWord) {
+            finishMinigame(true, action);
+          } else {
+            showMessage("Wrong word! Try again.");
+            typingInput.value = '';
+            typingInput.focus();
+          }
+        };
+        const onKey = (e) => { if (e.key === 'Enter') onSubmit(); };
+
+        typingSubmit.addEventListener('click', onSubmit);
+        typingInput.addEventListener('keypress', onKey);
+
+        minigameCleanup = () => {
+          typingSubmit.removeEventListener('click', onSubmit);
+          typingInput.removeEventListener('keypress', onKey);
+        };
+      }
+
+      function setupReactionGame(action) {
+        minigameContent.innerHTML = `
+          <h3 class="minigame-title">Reaction Time!</h3>
+          <p class="minigame-content">Click the box when it appears. You need 5 successful clicks!</p>
+          <div class="reaction-game" id="reactionGame">
+            <div class="reaction-box" id="reactionBox"></div>
+          </div>
+          <p id="reactionCounter">0/5 successful clicks</p>
+        `;
+
+        const reactionGame = document.getElementById('reactionGame');
+        const reactionBox = document.getElementById('reactionBox');
+        const reactionCounter = document.getElementById('reactionCounter');
+
+        let successfulClicks = 0;
+        let showTimeoutId = null;
+        let hideTimeoutId = null;
+        let startTime = 0;
+        let finished = false;
+
+        function scheduleNext() {
+          if (finished) return;
+          showTimeoutId = setTimeout(() => {
+            const gameRect = reactionGame.getBoundingClientRect();
+            const maxX = gameRect.width - 80;
+            const maxY = gameRect.height - 80;
+
+            const randomX = Math.floor(Math.random() * maxX);
+            const randomY = Math.floor(Math.random() * maxY);
+
+            reactionBox.style.left = `${randomX}px`;
+            reactionBox.style.top = `${randomY}px`;
+            reactionBox.style.display = 'block';
+            startTime = Date.now();
+
+            hideTimeoutId = setTimeout(() => {
+              reactionBox.style.display = 'none';
+              scheduleNext();
+            }, Math.random() * 1000 + 500);
+          }, Math.random() * 1000 + 500);
+        }
+
+        const onClick = () => {
+          if (finished) return;
+          const reactionTime = Date.now() - startTime;
+          if (reactionTime < 500) {
+            successfulClicks++;
+            reactionCounter.textContent = `${successfulClicks}/5 successful clicks`;
+            if (successfulClicks >= 5) {
+              finished = true;
+              clearTimeout(showTimeoutId);
+              clearTimeout(hideTimeoutId);
+              finishMinigame(true, action);
+              return;
+            }
+          }
+          reactionBox.style.display = 'none';
+          clearTimeout(hideTimeoutId);
+          scheduleNext();
+        };
+
+        reactionBox.addEventListener('click', onClick);
+        scheduleNext();
+
+        minigameCleanup = () => {
+          reactionBox.removeEventListener('click', onClick);
+          clearTimeout(showTimeoutId);
+          clearTimeout(hideTimeoutId);
+        };
+      }
+
+      function setupSequenceGame(action) {
+        const symbols = ['🔴', '🟢', '🔵', '🟡'];
+        let sequence = [];
+        let playerSequence = [];
+        let round = 1;
+        let showing = false;
+        let finished = false;
+        let showInterval = null;
+
+        minigameContent.innerHTML = `
+          <h3 class="minigame-title">Sequence Memory!</h3>
+          <p class="minigame-content">Repeat the sequence correctly. Complete 3 rounds to win!</p>
+          <div class="sequence-game" id="sequenceGame"></div>
+          <p id="sequenceRound">Round 1/3</p>
+          <p id="sequenceMessage">Watch the sequence...</p>
+        `;
+
+        const sequenceGame = document.getElementById('sequenceGame');
+        const sequenceRound = document.getElementById('sequenceRound');
+        const sequenceMessage = document.getElementById('sequenceMessage');
+
+        function startRound() {
+          if (finished) return;
+          sequenceMessage.textContent = "Watch the sequence...";
+          playerSequence = [];
+          sequence.push(symbols[Math.floor(Math.random() * symbols.length)]);
+          let i = 0;
+          showing = true;
+          showInterval = setInterval(() => {
+            if (i >= sequence.length) {
+              clearInterval(showInterval);
+              showing = false;
+              sequenceMessage.textContent = "Your turn! Repeat the sequence.";
+              return;
+            }
+            const btn = Array.from(sequenceGame.children).find(child => child.textContent === sequence[i]);
+            if (btn) {
+              btn.classList.add('active');
+              setTimeout(() => btn.classList.remove('active'), 400);
+            }
+            i++;
+          }, 800);
+        }
+
+        function handlePlayerInput(symbol) {
+          if (finished || showing || sequenceMessage.textContent !== "Your turn! Repeat the sequence.") return;
+          playerSequence.push(symbol);
+
+          if (playerSequence[playerSequence.length - 1] !== sequence[playerSequence.length - 1]) {
+            finished = true;
+            clearInterval(showInterval);
+            finishMinigame(false, action);
+            return;
+          }
+
+          if (playerSequence.length === sequence.length) {
+            if (round >= 3) {
+              finished = true;
+              clearInterval(showInterval);
+              finishMinigame(true, action);
+            } else {
+              round++;
+              sequenceRound.textContent = `Round ${round}/3`;
+              setTimeout(startRound, 600);
+            }
+          }
+        }
+
+        // Create buttons
+        symbols.forEach(symbol => {
+          const btn = document.createElement('div');
+          btn.className = 'sequence-btn';
+          btn.textContent = symbol;
+          btn.addEventListener('click', () => handlePlayerInput(symbol));
+          sequenceGame.appendChild(btn);
+        });
+
+        startRound();
+
+        minigameCleanup = () => {
+          clearInterval(showInterval);
+          sequenceGame.innerHTML = '';
+        };
+      }
+
+      function setupBalanceGame(action) {
+        minigameContent.innerHTML = `
+          <h3 class="minigame-title">Balance Challenge!</h3>
+          <p class="minigame-content">Keep the ball centered for 5 seconds using arrow keys</p>
+          <div class="balance-game" id="balanceGame">
+            <div class="balance-ball" id="balanceBall"></div>
+          </div>
+          <p id="balanceTimer">0.0/5.0 seconds</p>
+        `;
+
+        const balanceGame = document.getElementById('balanceGame');
+        const balanceBall = document.getElementById('balanceBall');
+        const balanceTimer = document.getElementById('balanceTimer');
+
+        let ballPosition = 50; // %
+        let ballVelocity = 0;
+        let balancedTime = 0;
+        let gameInterval = null;
+        let finished = false;
+
+        function updateGame() {
+          if (finished) return;
+          // physics-ish
+          ballVelocity += (Math.random() - 0.5) * 2;
+          ballPosition += ballVelocity;
+
+          if (ballPosition < 0) { ballPosition = 0; ballVelocity = 0; }
+          if (ballPosition > 100) { ballPosition = 100; ballVelocity = 0; }
+
+          balanceBall.style.left = `${ballPosition}%`;
+
+          if (ballPosition >= 45 && ballPosition <= 55) {
+            balancedTime += 0.1;
+            balanceTimer.textContent = `${balancedTime.toFixed(1)}/5.0 seconds`;
+            if (balancedTime >= 5) {
+              finished = true;
+              clearInterval(gameInterval);
+              finishMinigame(true, action);
+            }
+          } else {
+            balanceTimer.textContent = `${balancedTime.toFixed(1)}/5.0 seconds`;
+          }
+        }
+
+        const keyHandler = (e) => {
+          if (finished) return;
+          if (e.key === 'ArrowLeft') ballVelocity -= 1;
+          else if (e.key === 'ArrowRight') ballVelocity += 1;
+        };
+
+        document.addEventListener('keydown', keyHandler);
+        gameInterval = setInterval(updateGame, 100);
+
+        minigameCleanup = () => {
+          clearInterval(gameInterval);
+          document.removeEventListener('keydown', keyHandler);
+        };
+      }
+
+      function finishMinigame(success, action) {
+        // Clean up minigame resources
+        if (typeof minigameCleanup === 'function') {
+          try { minigameCleanup(); } catch {}
+          minigameCleanup = null;
+        }
+
+        minigameContainer.style.display = 'none';
+        gameState.inAction = false;
+        gameState.statDecayPaused = false;
+
+        if (success) {
+          const reward = Math.floor(Math.random() * 20) + 10;
+          gameState.money += reward;
+          moneyDisplay.textContent = gameState.money;
+
+          let statChange = 0;
+          let msg = '';
+
+          switch (action) {
+            case 'eat':
+              statChange = 20 * gameState.upgrades.food;
+              gameState.hunger = Math.min(100, gameState.hunger + statChange);
+              msg = `Yum! +${Math.floor(statChange)} Hunger and earned ${reward}💰`;
+              break;
+            case 'play':
+              statChange = 15 * gameState.upgrades.play;
+              gameState.happiness = Math.min(100, gameState.happiness + statChange);
+              msg = `Fun! +${Math.floor(statChange)} Happiness and earned ${reward}💰`;
+              break;
+            case 'sleep':
+              statChange = 25 * gameState.upgrades.sleep;
+              gameState.energy = Math.min(100, gameState.energy + statChange);
+              msg = `Zzz... +${Math.floor(statChange)} Energy and earned ${reward}💰`;
+              break;
+          }
+
+          showMessage(msg);
+          updateStats();
+          checkEvolution();
+        }
+      }
+
+      // Evolution
+      function checkEvolution() {
+        // Keeps original "deficit-driven" progress logic
+        const totalActions = (100 - gameState.hunger) + (100 - gameState.happiness) + (100 - gameState.energy);
+        const evolutionThreshold1 = 150;
+        const evolutionThreshold2 = 300;
+
+        if (gameState.petStage === 0) {
+          gameState.evolutionProgress = Math.min(100, (totalActions / evolutionThreshold1) * 100);
+          if (totalActions > evolutionThreshold1) {
+            startEvolution();
+          } else {
+            updateEvolutionHint();
+          }
+        } else if (gameState.petStage === 1) {
+          gameState.evolutionProgress = Math.min(100, ((totalActions - evolutionThreshold1) / (evolutionThreshold2 - evolutionThreshold1)) * 100);
+          if (totalActions > evolutionThreshold2) {
+            startEvolution();
+          } else {
+            updateEvolutionHint();
+          }
+        }
+
+        evolutionProgress.style.width = `${gameState.evolutionProgress}%`;
+      }
+
+      function updateEvolutionHint() {
+        if (gameState.petStage === 0) {
+          if (gameState.evolutionProgress > 75) {
+            evolutionHint.textContent = "Your pet is getting ready to evolve soon!";
+          } else if (gameState.evolutionProgress > 50) {
+            evolutionHint.textContent = "Your pet is growing, keep taking care of it!";
+          } else if (gameState.evolutionProgress > 25) {
+            evolutionHint.textContent = "Your pet is changing, but still has a way to go";
+          } else {
+            evolutionHint.textContent = "";
+          }
+        } else if (gameState.petStage === 1) {
+          if (gameState.evolutionProgress > 75) {
+            evolutionHint.textContent = "Your pet is almost ready for its final form!";
+          } else if (gameState.evolutionProgress > 50) {
+            evolutionHint.textContent = "Your pet is maturing nicely!";
+          } else if (gameState.evolutionProgress > 25) {
+            evolutionHint.textContent = "Your pet is developing towards its final form";
+          } else {
+            evolutionHint.textContent = "";
+          }
+        } else {
+          evolutionHint.textContent = "Your pet has reached its final form!";
+        }
+      }
+
+      function startEvolution() {
+        if (gameState.petStage >= 2) return; // already final
+        gameState.petStage++;
+        evolutionPet.textContent = gameState.petStages[gameState.pet][gameState.petStage];
+
+        let stageName = '';
+        if (gameState.petStage === 1) stageName = 'teen';
+        else if (gameState.petStage === 2) stageName = 'adult';
+
+        evolutionText.textContent = `Your pet has grown into a ${stageName}!`;
+        evolutionScreen.style.display = 'flex';
+      }
+
+      continueBtn.addEventListener('click', () => {
+        evolutionScreen.style.display = 'none';
+        petDisplay.textContent = gameState.petStages[gameState.pet][gameState.petStage];
+        gameState.evolutionProgress = 0;
+        evolutionProgress.style.width = '0%';
+        evolutionHint.textContent = "";
+      });
+
+      // Mood
+      function updateMood() {
+        const avgStat = (gameState.hunger + gameState.happiness + gameState.energy) / 3;
+
+        if (avgStat > 80) {
+          petMood.textContent = '😊';
+          petStatus.textContent = "Very happy and healthy!";
+        } else if (avgStat > 60) {
+          petMood.textContent = '🙂';
+          petStatus.textContent = "Doing well!";
+        } else if (avgStat > 40) {
+          petMood.textContent = '😐';
+          petStatus.textContent = "Could use some attention.";
+        } else if (avgStat > 20) {
+          petMood.textContent = '😕';
+          petStatus.textContent = "Not feeling great...";
+        } else {
+          petMood.textContent = '😫';
+          petStatus.textContent = "In critical condition!";
+        }
+
+        // Visual feedback
+        if (avgStat > 70) {
+          petDisplay.style.transform = 'scale(1.1)';
+        } else if (avgStat < 30) {
+          petDisplay.style.transform = 'scale(0.9)';
+        } else {
+          petDisplay.style.transform = 'scale(1)';
+        }
+      }
+
+      // Game loop (decoupled decay vs caretakers so caretakers keep ticking during minigames)
+      function gameLoop() {
+        if (!gameState.gameActive) return;
+
+        if (!gameState.statDecayPaused) {
+          // Increase age
+          gameState.age++;
+          petAge.textContent = `Age: ${gameState.age} days`;
+
+          // Decay
+          const decayRate = 1 / gameState.upgrades.health;
+          gameState.hunger = Math.max(0, gameState.hunger - decayRate);
+          gameState.happiness = Math.max(0, gameState.happiness - decayRate * 0.8);
+          gameState.energy = Math.max(0, gameState.energy - decayRate * 0.5);
+
+          // Health adjust
+          const healthPenalty =
+            (gameState.hunger < 30 ? 1 : 0) +
+            (gameState.happiness < 30 ? 1 : 0) +
+            (gameState.energy < 30 ? 1 : 0);
+
+          if (healthPenalty > 0) {
+            gameState.health = Math.max(0, gameState.health - healthPenalty * 0.5);
+          } else {
+            gameState.health = Math.min(100, gameState.health + 0.2);
+          }
+        }
+
+        // Caretakers always run
+        updateCaretakerTimers();
+
+        // Update UI
+        updateStats();
+        updateMood();
+        checkEvolution();
+
+        // Death
+        if (gameState.health <= 0) {
+          gameOver();
+        }
+      }
+
+      function updateStats() {
+        hungerBar.style.width = `${gameState.hunger}%`;
+        happinessBar.style.width = `${gameState.happiness}%`;
+        energyBar.style.width = `${gameState.energy}%`;
+        healthBar.style.width = `${gameState.health}%`;
+
+        hungerValue.textContent = `${Math.floor(gameState.hunger)}%`;
+        happinessValue.textContent = `${Math.floor(gameState.happiness)}%`;
+        energyValue.textContent = `${Math.floor(gameState.energy)}%`;
+        healthValue.textContent = `${Math.floor(gameState.health)}%`;
+      }
+
+      function gameOver() {
+        gameState.gameActive = false;
+        showMessage("Your pet has died... Refresh to start over.");
+        petDisplay.textContent = '💀';
+        petMood.textContent = '☠️';
+        petStatus.textContent = "Deceased";
+
+        // Disable all buttons
+        document.querySelectorAll('button').forEach(btn => { btn.disabled = true; });
+
+        // Stop loop
+        if (gameState.loopHandle) {
+          clearInterval(gameState.loopHandle);
+          gameState.loopHandle = null;
+        }
+      }
+
+      function showMessage(msg) {
+        message.textContent = msg;
+        message.classList.add('show');
+        setTimeout(() => {
+          message.classList.remove('show');
+        }, 3000);
+      }
+
+      function startGame() {
+        // Reset state
+        gameState.gameActive = true;
+        gameState.hunger = 100;
+        gameState.happiness = 100;
+        gameState.energy = 100;
+        gameState.health = 100;
+        gameState.money = 50;
+        gameState.age = 0;
+        gameState.petStage = 0;
+        gameState.evolutionProgress = 0;
+        gameState.upgrades = {
+          food: 1,
+          play: 1,
+          sleep: 1,
+          caretaker: { duration: 5, efficiency: 1, cost: 50 },
+          health: 1
+        };
+        gameState.caretakers = {
+          eat: { active: false, timeLeft: 0 },
+          play: { active: false, timeLeft: 0 },
+          sleep: { active: false, timeLeft: 0 }
+        };
+        gameState.statDecayPaused = false;
+
+        moneyDisplay.textContent = gameState.money;
+        petNameDisplay.textContent = gameState.petName;
+        petDisplay.textContent = gameState.petStages[gameState.pet][0];
+        evolutionProgress.style.width = '0%';
+        updateStats();
+        updateMood();
+        updateCaretakerButtons();
+        showMessage(`Welcome to your new ${gameState.petName}! Complete minigames to earn money and care for your pet.`);
+
+        // Clear any existing loop and start fresh
+        if (gameState.loopHandle) clearInterval(gameState.loopHandle);
+        gameState.loopHandle = setInterval(gameLoop, 1000);
+      }
+    </script>
+  </body>
+</html>
