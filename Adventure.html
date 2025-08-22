@@ -1,0 +1,2864 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>RPG Adventure: Enhanced</title>
+    <style>
+      :root {
+        --dark-bg: #1a1a2e;
+        --ui-bg: rgba(0, 0, 0, 0.7);
+        --ui-border: #444;
+        --health-color: #00ff00;
+        --enemy-health-color: #ff0000;
+        --text-color: white;
+        --shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        --townsfolk-color: #ffa07a;
+      }
+
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        background-color: #222;
+        color: var(--text-color);
+      }
+
+      #gameCanvas {
+        display: block;
+        background-color: var(--dark-bg);
+        image-rendering: pixelated;
+      }
+
+      /* UI Elements */
+      #ui,
+      #controls {
+        position: absolute;
+        background-color: var(--ui-bg);
+        padding: 10px;
+        border-radius: 8px;
+        border: 2px solid var(--ui-border);
+        box-shadow: var(--shadow);
+      }
+
+      #ui {
+        top: 10px;
+        left: 10px;
+      }
+
+      #controls {
+        top: 10px;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      /* Health bars */
+      .health-bar {
+        height: 5px;
+        background-color: var(--enemy-health-color);
+        border-radius: 2px;
+        margin-top: 3px;
+      }
+
+      .health-bar-fill {
+        height: 100%;
+        background-color: var(--health-color);
+        border-radius: 2px;
+        width: 100%;
+        transition: width 0.3s ease;
+      }
+
+      /* Shop styles */
+      #shopMenu,
+      #inventoryMenu {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.9);
+        color: var(--text-color);
+        padding: 20px;
+        border-radius: 10px;
+        border: 2px solid var(--ui-border);
+        display: none;
+        z-index: 100;
+        width: 300px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .shop-item,
+      .inventory-item {
+        margin: 10px 0;
+        padding: 8px;
+        border-bottom: 1px solid var(--ui-border);
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+      }
+
+      .shop-item:hover,
+      .inventory-item:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .equipped {
+        background-color: rgba(0, 255, 0, 0.1);
+        border-left: 3px solid #0f0;
+      }
+
+      /* Message system */
+      #message {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: 1px solid var(--ui-border);
+        text-align: center;
+        display: none;
+        max-width: 80%;
+        box-shadow: var(--shadow);
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+
+      /* Buttons */
+      button {
+        background-color: #333;
+        color: var(--text-color);
+        border: 1px solid var(--ui-border);
+        padding: 5px 10px;
+        margin: 5px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      button:hover {
+        background-color: #444;
+      }
+
+      /* Icons */
+      .icon {
+        display: inline-block;
+        margin-left: 3px;
+      }
+
+      .gold-icon {
+        color: gold;
+      }
+      .damage-icon {
+        color: #ff5555;
+      }
+      .armor-icon {
+        color: #aaa;
+      }
+      .health-icon {
+        color: #ff5555;
+      }
+
+      /* Inventory tabs */
+      .inventory-tabs {
+        display: flex;
+        margin-bottom: 10px;
+        border-bottom: 1px solid var(--ui-border);
+      }
+
+      .inventory-tab {
+        padding: 5px 10px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+      }
+
+      .inventory-tab.active {
+        border-bottom: 2px solid #fff;
+      }
+
+      /* Equipment slots */
+      .equipment-slots {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      .equipment-slot {
+        border: 1px dashed #555;
+        padding: 5px;
+        text-align: center;
+        min-height: 40px;
+      }
+
+      .equipment-slot.filled {
+        border: 1px solid #0f0;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui">
+      <div>
+        Health:
+        <span id="health">100</span>/<span id="maxHealth">100</span>
+      </div>
+      <div class="health-bar">
+        <div class="health-bar-fill" id="healthBar"></div>
+      </div>
+      <div>
+        Gold: <span id="gold">50</span>
+        <span class="icon gold-icon">⨠</span>
+      </div>
+      <div>
+        Damage: <span id="damage">10</span>
+        <span class="icon damage-icon">⚔</span>
+      </div>
+      <div>Attack Speed: <span id="attackSpeed">1.0</span>x</div>
+      <div>
+        Armor: <span id="armor">0</span>% <span class="icon armor-icon">🛡</span>
+      </div>
+      <div>
+        Potions: <span id="potions">0</span>
+        <span class="icon health-icon">❤</span>
+      </div>
+      <div>
+        XP: <span id="xp">0</span>/<span id="xpToNext">100</span> | Level:
+        <span id="level">1</span>
+      </div>
+      <div id="murdererNotice" style="color: #ff4444; display: none">
+        Shops are closed to murderers!
+      </div>
+      <div id="townsfolkKills" style="font-size: 12px; color: #ffa07a">
+        Townsfolk killed: <span id="kills">0</span>
+      </div>
+    </div>
+
+    <div id="controls">
+      <div><strong>Controls:</strong></div>
+      <div>WASD: Move</div>
+      <div>Arrow Keys: Attack</div>
+      <div>SPACE: Interact</div>
+      <div>P: Use Potion</div>
+      <div>R: Rest (in Home)</div>
+      <div>I: Inventory</div>
+      <button id="saveBtn">Save Game</button>
+      <button id="loadBtn">Load Game</button>
+    </div>
+
+    <div id="message"></div>
+
+    <!-- (Optional) Stat allocation modal - currently unused, allocation is in Inventory -->
+    <div
+      id="statModal"
+      style="
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.95);
+        color: white;
+        padding: 24px 32px;
+        border-radius: 12px;
+        border: 2px solid #888;
+        z-index: 200;
+        text-align: center;
+        min-width: 260px;
+      "
+    >
+      <h2>Level Up!</h2>
+      <div>
+        You have <span id="statPoints">0</span> stat point(s) to allocate:
+      </div>
+      <div style="margin: 16px 0">
+        <button id="addHealth">+10 Max Health</button>
+        <button id="addDamage">+2 Damage</button>
+        <button id="addSpeed">+0.2 Speed</button>
+      </div>
+      <button id="closeStatModal">Done</button>
+    </div>
+
+    <div id="shopMenu">
+      <h2 id="shopTitle" style="text-align: center; margin-top: 0">Shop</h2>
+      <div id="shopItems"></div>
+      <p style="text-align: center; font-size: 12px; margin-bottom: 0">
+        Press corresponding number to buy, SPACE to exit
+      </p>
+    </div>
+
+    <div id="inventoryMenu">
+      <h2 style="text-align: center; margin-top: 0">Inventory</h2>
+
+      <div class="equipment-slots">
+        <div class="equipment-slot" id="weaponSlot">
+          <div>Weapon: <span id="equippedWeapon">None</span></div>
+        </div>
+        <div class="equipment-slot" id="armorSlot">
+          <div>Armor: <span id="equippedArmor">None</span></div>
+        </div>
+      </div>
+
+      <!-- Stat allocation UI in inventory -->
+      <div
+        id="statAllocation"
+        style="display: none; text-align: center; margin-bottom: 10px"
+      >
+        <div>
+          You have <span id="statPointsInv">0</span> stat point(s) to allocate:
+        </div>
+        <button id="addHealthInv">+10 Max Health</button>
+        <button id="addDamageInv">+2 Damage</button>
+        <button id="addSpeedInv">+0.2 Speed</button>
+      </div>
+
+      <div class="inventory-tabs">
+        <div class="inventory-tab active" data-tab="weapons">Weapons</div>
+        <div class="inventory-tab" data-tab="armor">Armor</div>
+        <div class="inventory-tab" data-tab="consumables">Consumables</div>
+      </div>
+
+      <div id="inventoryItems"></div>
+      <p style="text-align: center; font-size: 12px; margin-bottom: 0">
+        SPACE to exit
+      </p>
+    </div>
+
+    <script>
+      // Game constants
+      const CONSTANTS = {
+        PLAYER: {
+          WIDTH: 30,
+          HEIGHT: 50,
+          START_HEALTH: 100,
+          START_GOLD: 50,
+          START_DAMAGE: 10,
+          SPEED: 2.5, // slowed for weightier movement
+          ATTACK_RANGE: 40,
+          ATTACK_WIDTH: 30,
+          BASE_ATTACK_COOLDOWN: 32,
+          BASE_ATTACK_SPEED: 1.0,
+          START_XP: 0,
+          START_LEVEL: 1,
+          XP_TO_NEXT: 100,
+        },
+        BOSS_RESPAWN: 30000, // 30 seconds
+        MESSAGE_DURATION: 3000,
+        ZONES: {
+          TOWN: "town",
+          RAT_FIELDS: "ratFields",
+          BOSS_LAIR: "bossLair",
+          HAUNTED_WOODS: "hauntedWoods",
+          ANCIENT_RUINS: "ancientRuins",
+        },
+        ITEM_TYPES: {
+          WEAPON: "weapon",
+          ARMOR: "armor",
+          CONSUMABLE: "consumable",
+        },
+        TOWNSFOLK_KILL_THRESHOLD: 3,
+      };
+
+      // --- Attack feedback variables ---
+      let shakeTime = 0,
+        shakeIntensity = 0,
+        hitFlash = 0;
+
+      // --- Attack feedback function ---
+      function triggerAttackFeedback() {
+        shakeTime = 8;
+        shakeIntensity = 8;
+        hitFlash = 4;
+      }
+
+      // Canvas
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        // Keep things in bounds after resize
+        clampInBounds(gameState.player);
+        for (const e of gameState.enemies) clampInBounds(e);
+        for (const p of gameState.townsfolk) clampInBounds(p);
+        // Decorations depend on canvas size; clear cache
+        for (const k in decorationsCache) delete decorationsCache[k];
+      }
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
+
+      function clampInBounds(entity) {
+        entity.x = Math.max(0, Math.min(canvas.width - entity.width, entity.x));
+        entity.y = Math.max(
+          0,
+          Math.min(canvas.height - entity.height, entity.y)
+        );
+      }
+
+      // Sprite factory
+      const SpriteFactory = {
+        createPlayer() {
+          const c = document.createElement("canvas");
+          c.width = 32;
+          c.height = 48;
+          const g = c.getContext("2d");
+          // Head
+          g.save();
+          g.beginPath();
+          g.arc(16, 10, 8, 0, Math.PI * 2);
+          g.closePath();
+          g.fillStyle = "#ffe0b0";
+          g.shadowColor = "#b08040";
+          g.shadowBlur = 2;
+          g.fill();
+          g.shadowBlur = 0;
+          g.strokeStyle = "#333";
+          g.lineWidth = 2;
+          g.stroke();
+          g.restore();
+          // Body
+          g.fillStyle = "#3a6ea5";
+          g.fillRect(12, 18, 8, 20);
+          g.strokeStyle = "#222";
+          g.strokeRect(12, 18, 8, 20);
+          // Arms
+          g.fillStyle = "#ffe0b0";
+          g.fillRect(4, 18, 8, 4);
+          g.fillRect(20, 18, 8, 4);
+          g.strokeStyle = "#333";
+          g.strokeRect(4, 18, 8, 4);
+          g.strokeRect(20, 18, 8, 4);
+          // Legs
+          g.fillStyle = "#444";
+          g.fillRect(12, 38, 4, 10);
+          g.fillRect(16, 38, 4, 10);
+          g.strokeStyle = "#222";
+          g.strokeRect(12, 38, 4, 10);
+          g.strokeRect(16, 38, 4, 10);
+          return c;
+        },
+        createEnemy(color, scale = 1, outline = "#222", eyeColor = "#000", shade = null) {
+          const size = 32 * scale;
+          const c = document.createElement("canvas");
+          c.width = size;
+          c.height = size;
+          const g = c.getContext("2d");
+          // Body
+          g.save();
+          g.beginPath();
+          g.arc(size / 2, size / 2, size / 2 - 4, 0, Math.PI * 2);
+          g.closePath();
+          g.fillStyle = color;
+          g.fill();
+          if (shade) {
+            g.globalAlpha = 0.3;
+            g.beginPath();
+            g.arc(size / 2, size / 2 + 4, size / 2 - 8, 0, Math.PI);
+            g.closePath();
+            g.fillStyle = shade;
+            g.fill();
+            g.globalAlpha = 1;
+          }
+          g.strokeStyle = outline;
+          g.lineWidth = 3;
+          g.stroke();
+          g.restore();
+          // Eyes
+          g.fillStyle = eyeColor;
+          g.beginPath();
+          g.arc(size / 2 - 4, size / 2 - 4, 2, 0, Math.PI * 2);
+          g.arc(size / 2 + 4, size / 2 - 4, 2, 0, Math.PI * 2);
+          g.fill();
+          return c;
+        },
+        createBoss(
+          color,
+          outline = "#222",
+          eyeColor = "#000",
+          mouthColor = "#000",
+          hornColor = "#880000",
+          shade = null
+        ) {
+          const c = document.createElement("canvas");
+          c.width = 64;
+          c.height = 64;
+          const g = c.getContext("2d");
+          // Body
+          g.save();
+          g.beginPath();
+          g.arc(32, 32, 28, 0, Math.PI * 2);
+          g.closePath();
+          g.fillStyle = color;
+          g.fill();
+          if (shade) {
+            g.globalAlpha = 0.3;
+            g.beginPath();
+            g.arc(32, 40, 20, 0, Math.PI);
+            g.closePath();
+            g.fillStyle = shade;
+            g.fill();
+            g.globalAlpha = 1;
+          }
+          g.strokeStyle = outline;
+          g.lineWidth = 4;
+          g.stroke();
+          g.restore();
+          // Eyes
+          g.fillStyle = eyeColor;
+          g.beginPath();
+          g.arc(24, 24, 4, 0, Math.PI * 2);
+          g.arc(40, 24, 4, 0, Math.PI * 2);
+          g.fill();
+          // Mouth
+          g.strokeStyle = mouthColor;
+          g.lineWidth = 2;
+          g.beginPath();
+          g.arc(32, 32, 16, 0.1 * Math.PI, 0.9 * Math.PI);
+          g.stroke();
+          // Horns
+          g.fillStyle = hornColor;
+          g.beginPath();
+          g.moveTo(16, 16);
+          g.lineTo(8, 8);
+          g.lineTo(16, 12);
+          g.fill();
+          g.beginPath();
+          g.moveTo(48, 16);
+          g.lineTo(56, 8);
+          g.lineTo(48, 12);
+          g.fill();
+          return c;
+        },
+        createBuilding(color) {
+          const c = document.createElement("canvas");
+          c.width = 64;
+          c.height = 64;
+          const g = c.getContext("2d");
+          // Base
+          g.fillStyle = color;
+          g.fillRect(0, 0, 64, 64);
+          // Door
+          g.fillStyle = "#000";
+          g.fillRect(20, 40, 24, 24);
+          // Roof
+          g.fillStyle = "#333";
+          g.beginPath();
+          g.moveTo(0, 0);
+          g.lineTo(32, -10);
+          g.lineTo(64, 0);
+          g.lineTo(64, 10);
+          g.lineTo(32, 20);
+          g.lineTo(0, 10);
+          g.closePath();
+          g.fill();
+          return c;
+        },
+        createTownsfolk() {
+          const c = document.createElement("canvas");
+          c.width = 24;
+          c.height = 36;
+          const g = c.getContext("2d");
+          // Head
+          g.save();
+          g.beginPath();
+          g.arc(12, 8, 6, 0, Math.PI * 2);
+          g.closePath();
+          g.fillStyle = "#FFA07A";
+          g.fill();
+          g.strokeStyle = "#b06030";
+          g.lineWidth = 2;
+          g.stroke();
+          g.restore();
+          // Body
+          g.fillStyle = "#4682B4";
+          g.fillRect(8, 14, 8, 16);
+          g.strokeStyle = "#222";
+          g.strokeRect(8, 14, 8, 16);
+          // Legs
+          g.fillStyle = "#222";
+          g.fillRect(8, 30, 3, 6);
+          g.fillRect(13, 30, 3, 6);
+          return c;
+        },
+        createGhost() {
+          const c = document.createElement("canvas");
+          c.width = 32;
+          c.height = 32;
+          const g = c.getContext("2d");
+          // Body
+          g.save();
+          g.beginPath();
+          g.arc(16, 16, 12, Math.PI, 2 * Math.PI);
+          g.lineTo(28, 28);
+          g.lineTo(24, 24);
+          g.lineTo(20, 28);
+          g.lineTo(16, 24);
+          g.lineTo(12, 28);
+          g.lineTo(8, 24);
+          g.lineTo(4, 28);
+          g.closePath();
+          g.fillStyle = "#e0e0ff";
+          g.shadowColor = "#aaaaff";
+          g.shadowBlur = 4;
+          g.fill();
+          g.shadowBlur = 0;
+          g.strokeStyle = "#8888cc";
+          g.lineWidth = 2;
+          g.stroke();
+          g.restore();
+          // Eyes
+          g.fillStyle = "#222";
+          g.beginPath();
+          g.arc(12, 18, 2, 0, Math.PI * 2);
+          g.arc(20, 18, 2, 0, Math.PI * 2);
+          g.fill();
+          return c;
+        },
+        createSkeleton() {
+          const c = document.createElement("canvas");
+          c.width = 32;
+          c.height = 32;
+          const g = c.getContext("2d");
+          // Skull
+          g.save();
+          g.beginPath();
+          g.arc(16, 12, 8, 0, Math.PI * 2);
+          g.closePath();
+          g.fillStyle = "#f8f8f8";
+          g.shadowColor = "#bbb";
+          g.shadowBlur = 2;
+          g.fill();
+          g.shadowBlur = 0;
+          g.strokeStyle = "#888";
+          g.lineWidth = 2;
+          g.stroke();
+          g.restore();
+          // Eyes
+          g.fillStyle = "#222";
+          g.beginPath();
+          g.arc(13, 12, 2, 0, Math.PI * 2);
+          g.arc(19, 12, 2, 0, Math.PI * 2);
+          g.fill();
+          // Body
+          g.fillStyle = "#f8f8f8";
+          g.fillRect(14, 20, 4, 8);
+          g.strokeStyle = "#888";
+          g.strokeRect(14, 20, 4, 8);
+          // Arms/legs
+          g.strokeStyle = "#bbb";
+          g.beginPath();
+          g.moveTo(14, 22);
+          g.lineTo(10, 28);
+          g.moveTo(18, 22);
+          g.lineTo(22, 28);
+          g.moveTo(14, 28);
+          g.lineTo(14, 32);
+          g.moveTo(18, 28);
+          g.lineTo(18, 32);
+          g.stroke();
+          return c;
+        },
+        createGolem() {
+          const c = document.createElement("canvas");
+          c.width = 40;
+          c.height = 40;
+          const g = c.getContext("2d");
+          // Body
+          g.save();
+          g.beginPath();
+          g.arc(20, 20, 16, 0, Math.PI * 2);
+          g.closePath();
+          g.fillStyle = "#b0a080";
+          g.shadowColor = "#6e5c3c";
+          g.shadowBlur = 4;
+          g.fill();
+          g.shadowBlur = 0;
+          g.strokeStyle = "#6e5c3c";
+          g.lineWidth = 3;
+          g.stroke();
+          g.restore();
+          // Eyes
+          g.fillStyle = "#333";
+          g.beginPath();
+          g.arc(15, 18, 2, 0, Math.PI * 2);
+          g.arc(25, 18, 2, 0, Math.PI * 2);
+          g.fill();
+          // Cracks
+          g.strokeStyle = "#8c7c60";
+          g.beginPath();
+          g.moveTo(20, 24);
+          g.lineTo(20, 32);
+          g.moveTo(16, 28);
+          g.lineTo(24, 36);
+          g.stroke();
+          return c;
+        },
+        createGuardBoss() {
+          const c = document.createElement("canvas");
+          c.width = 48;
+          c.height = 64;
+          const g = c.getContext("2d");
+          // Body
+          g.save();
+          g.fillStyle = "#2d3e50";
+          g.fillRect(12, 24, 24, 32);
+          g.strokeStyle = "#111";
+          g.lineWidth = 2;
+          g.strokeRect(12, 24, 24, 32);
+          g.restore();
+          // Head
+          g.save();
+          g.beginPath();
+          g.arc(24, 16, 12, 0, Math.PI * 2);
+          g.closePath();
+          g.fillStyle = "#ffe0b0";
+          g.fill();
+          g.strokeStyle = "#333";
+          g.lineWidth = 2;
+          g.stroke();
+          g.restore();
+          // Eyes
+          g.fillStyle = "#222";
+          g.beginPath();
+          g.arc(20, 18, 2, 0, Math.PI * 2);
+          g.arc(28, 18, 2, 0, Math.PI * 2);
+          g.fill();
+          // Shield
+          g.save();
+          g.beginPath();
+          g.arc(36, 48, 8, Math.PI * 0.5, Math.PI * 1.5);
+          g.lineTo(36, 56);
+          g.closePath();
+          g.fillStyle = "#bbb";
+          g.fill();
+          g.strokeStyle = "#888";
+          g.stroke();
+          g.restore();
+          // Sword
+          g.save();
+          g.strokeStyle = "#ccc";
+          g.lineWidth = 3;
+          g.beginPath();
+          g.moveTo(12, 56);
+          g.lineTo(6, 64);
+          g.stroke();
+          g.restore();
+          return c;
+        },
+      };
+
+      // Load all sprites
+      const sprites = {
+        player: SpriteFactory.createPlayer(),
+        rat: SpriteFactory.createEnemy("#808080", 1, "#444", "#000", "#555"),
+        giantRat: SpriteFactory.createEnemy("#606060", 1.3, "#333", "#000", "#888"),
+        snake: SpriteFactory.createEnemy("#00AA00", 1, "#225522", "#000", "#44ff44"),
+        bat: SpriteFactory.createEnemy("#999999", 1, "#222", "#000", "#bbb"),
+        slime: SpriteFactory.createEnemy("#00FF00", 1, "#228822", "#000", "#aaffaa"),
+        boss: SpriteFactory.createBoss("#FF0000", "#222", "#000", "#000", "#880000", "#ff8888"),
+        home: SpriteFactory.createBuilding("#8B4513"),
+        shop: SpriteFactory.createBuilding("#FFD700"),
+        blacksmith: SpriteFactory.createBuilding("#A9A9A9"),
+        ratFields: SpriteFactory.createBuilding("#2E8B57"),
+        bossLair: SpriteFactory.createBuilding("#8B0000"),
+        town: SpriteFactory.createBuilding("#4682B4"),
+        townsfolk: SpriteFactory.createTownsfolk(),
+        hauntedWoods: SpriteFactory.createBuilding("#556b2f"),
+        ancientRuins: SpriteFactory.createBuilding("#b0a080"),
+        ghost: SpriteFactory.createGhost(),
+        skeleton: SpriteFactory.createSkeleton(),
+        golem: SpriteFactory.createGolem(),
+        hauntedBoss: SpriteFactory.createBoss("#b0b0ff", "#444", "#222", "#222", "#8888cc", "#8888ff"),
+        ruinsBoss: SpriteFactory.createBoss("#b0a080", "#6e5c3c", "#333", "#333", "#8c7c60", "#e0d0a0"),
+        guardBoss: SpriteFactory.createGuardBoss(),
+      };
+
+      // Game state
+      const gameState = {
+        player: {
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          width: CONSTANTS.PLAYER.WIDTH,
+          height: CONSTANTS.PLAYER.HEIGHT,
+          health: CONSTANTS.PLAYER.START_HEALTH,
+          maxHealth: CONSTANTS.PLAYER.START_HEALTH,
+          gold: CONSTANTS.PLAYER.START_GOLD,
+          baseDamage: CONSTANTS.PLAYER.START_DAMAGE,
+          currentDamage: CONSTANTS.PLAYER.START_DAMAGE,
+          armor: 0,
+          speed: CONSTANTS.PLAYER.SPEED,
+          direction: "down",
+          attackCooldown: 0,
+          attackDirection: "down",
+          attackSpeed: CONSTANTS.PLAYER.BASE_ATTACK_SPEED,
+          // Buff components
+          bonusDamage: 0, // from consumables
+          buffAttackSpeedMult: 1, // from consumables (multiplicative)
+          potions: 0,
+          inventory: [],
+          equippedWeapon: null,
+          equippedArmor: null,
+          xp: CONSTANTS.PLAYER.START_XP,
+          level: CONSTANTS.PLAYER.START_LEVEL,
+          xpToNext: CONSTANTS.PLAYER.XP_TO_NEXT,
+          statPoints: 0,
+        },
+        enemies: [],
+        buildings: [],
+        townsfolk: [],
+        currentZone: CONSTANTS.ZONES.TOWN,
+        keys: {},
+        lastBossSpawn: 0,
+        bossRespawnTime: CONSTANTS.BOSS_RESPAWN,
+        inShop: false,
+        inInventory: false,
+        currentShop: null,
+        enemyTypes: {
+          rat: {
+            health: 40,
+            damage: 8,
+            speed: 1,
+            chaseSpeed: 1.5,
+            color: "#808080",
+            gold: 5,
+            sprite: "rat",
+            chaseDistance: 250,
+            attackCooldown: 60,
+            attackRange: 35,
+            idleTime: 90,
+            moveTime: 60,
+          },
+          giantRat: {
+            health: 90,
+            damage: 12,
+            speed: 0.7,
+            chaseSpeed: 1.2,
+            color: "#606060",
+            gold: 15,
+            sprite: "giantRat",
+            chaseDistance: 300,
+            attackCooldown: 80,
+            attackRange: 40,
+            idleTime: 120,
+            moveTime: 80,
+          },
+          snake: {
+            health: 55,
+            damage: 10,
+            speed: 1,
+            chaseSpeed: 2,
+            color: "#00AA00",
+            gold: 10,
+            sprite: "snake",
+            chaseDistance: 350,
+            attackCooldown: 50,
+            attackRange: 30,
+            idleTime: 60,
+            moveTime: 40,
+          },
+          bat: {
+            health: 35,
+            damage: 6,
+            speed: 1.5,
+            chaseSpeed: 2.5,
+            color: "#999999",
+            gold: 7,
+            sprite: "bat",
+            chaseDistance: 400,
+            attackCooldown: 40,
+            attackRange: 30,
+            idleTime: 40,
+            moveTime: 30,
+          },
+          slime: {
+            health: 80,
+            damage: 5,
+            speed: 0.5,
+            chaseSpeed: 0.8,
+            color: "#00FF00",
+            gold: 8,
+            sprite: "slime",
+            chaseDistance: 200,
+            attackCooldown: 100,
+            attackRange: 35,
+            idleTime: 150,
+            moveTime: 100,
+          },
+          boss: {
+            health: 350,
+            damage: 25,
+            speed: 1,
+            chaseSpeed: 2,
+            color: "#FF0000",
+            gold: 100,
+            sprite: "boss",
+            chaseDistance: 500,
+            attackCooldown: 30,
+            attackRange: 50,
+            idleTime: 60,
+            moveTime: 40,
+          },
+          ghost: {
+            health: 60,
+            damage: 14,
+            speed: 1.2,
+            chaseSpeed: 2,
+            color: "#e0e0ff",
+            gold: 18,
+            sprite: "ghost",
+            chaseDistance: 350,
+            attackCooldown: 60,
+            attackRange: 35,
+            idleTime: 80,
+            moveTime: 50,
+            xp: 25,
+          },
+          skeleton: {
+            health: 80,
+            damage: 18,
+            speed: 1,
+            chaseSpeed: 1.5,
+            color: "#f8f8f8",
+            gold: 25,
+            sprite: "skeleton",
+            chaseDistance: 350,
+            attackCooldown: 70,
+            attackRange: 35,
+            idleTime: 90,
+            moveTime: 60,
+            xp: 35,
+          },
+          golem: {
+            health: 180,
+            damage: 30,
+            speed: 0.6,
+            chaseSpeed: 1,
+            color: "#b0a080",
+            gold: 50,
+            sprite: "golem",
+            chaseDistance: 400,
+            attackCooldown: 100,
+            attackRange: 45,
+            idleTime: 120,
+            moveTime: 80,
+            xp: 60,
+          },
+          hauntedBoss: {
+            health: 400,
+            damage: 35,
+            speed: 1.2,
+            chaseSpeed: 2,
+            color: "#b0b0ff",
+            gold: 200,
+            sprite: "hauntedBoss",
+            chaseDistance: 500,
+            attackCooldown: 25,
+            attackRange: 60,
+            idleTime: 60,
+            moveTime: 40,
+            xp: 150,
+          },
+          ruinsBoss: {
+            health: 600,
+            damage: 50,
+            speed: 0.9,
+            chaseSpeed: 1.5,
+            color: "#b0a080",
+            gold: 300,
+            sprite: "ruinsBoss",
+            chaseDistance: 500,
+            attackCooldown: 30,
+            attackRange: 70,
+            idleTime: 70,
+            moveTime: 50,
+            xp: 250,
+          },
+          guardBoss: {
+            health: 350,
+            damage: 40,
+            speed: 1.2,
+            chaseSpeed: 2,
+            color: "#2d3e50",
+            gold: 0,
+            sprite: "guardBoss",
+            chaseDistance: 500,
+            attackCooldown: 25,
+            attackRange: 50,
+            idleTime: 60,
+            moveTime: 40,
+            xp: 0,
+          },
+        },
+        shops: {
+          shop: {
+            title: "General Store",
+            items: [
+              {
+                name: "Health Potion",
+                cost: 15,
+                effect: "potion:1",
+                description: "Restores 30 HP (use with P)",
+                type: CONSTANTS.ITEM_TYPES.CONSUMABLE,
+              },
+              {
+                name: "Max Health Potion",
+                cost: 30,
+                effect: "maxHealth:15",
+                description: "Increases max HP by 15",
+                type: CONSTANTS.ITEM_TYPES.CONSUMABLE,
+              },
+              {
+                name: "Speed Potion",
+                cost: 50,
+                effect: "speed:1",
+                description: "Permanently +1 speed",
+                type: CONSTANTS.ITEM_TYPES.CONSUMABLE,
+              },
+              {
+                name: "Mega Health Potion",
+                cost: 60,
+                effect: "maxHealth:40",
+                description: "Increases max HP by 40",
+                type: CONSTANTS.ITEM_TYPES.CONSUMABLE,
+              },
+              {
+                name: "Elixir of Fury",
+                cost: 90,
+                effect: "damage:8",
+                description: "+8 damage (temporary, 30s)",
+                type: CONSTANTS.ITEM_TYPES.CONSUMABLE,
+              },
+              {
+                name: "Stamina Brew",
+                cost: 70,
+                effect: "attackSpeed:1.2",
+                description: "1.2x attack speed (temporary, 30s)",
+                type: CONSTANTS.ITEM_TYPES.CONSUMABLE,
+              },
+            ],
+          },
+          blacksmith: {
+            title: "Blacksmith",
+            items: [
+              {
+                name: "Iron Sword",
+                cost: 40,
+                effect: "damage:10",
+                description: "+10 damage",
+                type: CONSTANTS.ITEM_TYPES.WEAPON,
+              },
+              {
+                name: "Steel Armor",
+                cost: 70,
+                effect: "armor:25",
+                description: "25% damage reduction",
+                type: CONSTANTS.ITEM_TYPES.ARMOR,
+              },
+              {
+                name: "Steel Sword",
+                cost: 120,
+                effect: "damage:20:attackSpeed:0.8",
+                description: "+20 damage, 0.8x attack speed",
+                type: CONSTANTS.ITEM_TYPES.WEAPON,
+              },
+              {
+                name: "Mithril Armor",
+                cost: 180,
+                effect: "armor:40",
+                description: "40% damage reduction",
+                type: CONSTANTS.ITEM_TYPES.ARMOR,
+              },
+              {
+                name: "Dragon Slayer",
+                cost: 350,
+                effect: "damage:35:attackSpeed:0.6",
+                description: "+35 damage, 0.6x attack speed (boss killer)",
+                type: CONSTANTS.ITEM_TYPES.WEAPON,
+              },
+              {
+                name: "Quick Dagger",
+                cost: 80,
+                effect: "damage:5:attackSpeed:1.5",
+                description: "+5 damage, 1.5x attack speed",
+                type: CONSTANTS.ITEM_TYPES.WEAPON,
+              },
+              {
+                name: "Great Axe",
+                cost: 200,
+                effect: "damage:28:attackSpeed:0.7",
+                description: "+28 damage, 0.7x attack speed",
+                type: CONSTANTS.ITEM_TYPES.WEAPON,
+              },
+              {
+                name: "Knight Shield",
+                cost: 120,
+                effect: "armor:30",
+                description: "30% damage reduction",
+                type: CONSTANTS.ITEM_TYPES.ARMOR,
+              },
+            ],
+          },
+        },
+        townsfolkKills: 0,
+        murderer: false,
+        shopLockdown: false,
+        guardBossDefeated: false,
+      };
+
+      // Initialize buildings (no concat to avoid duplicates)
+      function initBuildings() {
+        gameState.buildings = [
+          // Home (town)
+          {
+            x: 100,
+            y: 100,
+            width: 80,
+            height: 80,
+            type: "home",
+            color: "#8B4513",
+            sprite: "home",
+            zone: CONSTANTS.ZONES.TOWN,
+          },
+          // Shop
+          {
+            x: 250,
+            y: 100,
+            width: 80,
+            height: 80,
+            type: "shop",
+            color: "#FFD700",
+            sprite: "shop",
+            zone: CONSTANTS.ZONES.TOWN,
+          },
+          // Blacksmith
+          {
+            x: 400,
+            y: 100,
+            width: 80,
+            height: 80,
+            type: "blacksmith",
+            color: "#A9A9A9",
+            sprite: "blacksmith",
+            zone: CONSTANTS.ZONES.TOWN,
+          },
+          // Rat Fields entrance (town)
+          {
+            x: canvas.width - 150,
+            y: 100,
+            width: 100,
+            height: 50,
+            type: "ratFields",
+            color: "#2E8B57",
+            sprite: "ratFields",
+            zone: CONSTANTS.ZONES.TOWN,
+          },
+          // Boss Lair entrance (in Rat Fields)
+          {
+            x: canvas.width - 150,
+            y: canvas.height - 150,
+            width: 100,
+            height: 50,
+            type: "bossLair",
+            color: "#8B0000",
+            sprite: "bossLair",
+            zone: CONSTANTS.ZONES.RAT_FIELDS,
+          },
+          // Town exits (Rat Fields/Boss Lair)
+          {
+            x: 50,
+            y: canvas.height - 70,
+            width: 100,
+            height: 50,
+            type: "town",
+            color: "#4682B4",
+            sprite: "town",
+            zone: CONSTANTS.ZONES.RAT_FIELDS,
+          },
+          {
+            x: 50,
+            y: canvas.height - 70,
+            width: 100,
+            height: 50,
+            type: "town",
+            color: "#4682B4",
+            sprite: "town",
+            zone: CONSTANTS.ZONES.BOSS_LAIR,
+          },
+          // Haunted Woods entrance (from town)
+          {
+            x: 100,
+            y: canvas.height - 150,
+            width: 100,
+            height: 50,
+            type: "hauntedWoods",
+            color: "#556b2f",
+            sprite: "hauntedWoods",
+            zone: CONSTANTS.ZONES.TOWN,
+          },
+          // Ancient Ruins entrance (from town)
+          {
+            x: canvas.width - 150,
+            y: canvas.height - 150,
+            width: 100,
+            height: 50,
+            type: "ancientRuins",
+            color: "#b0a080",
+            sprite: "ancientRuins",
+            zone: CONSTANTS.ZONES.TOWN,
+          },
+          // Haunted Woods exit to town
+          {
+            x: 50,
+            y: canvas.height - 70,
+            width: 100,
+            height: 50,
+            type: "town",
+            color: "#4682B4",
+            sprite: "town",
+            zone: CONSTANTS.ZONES.HAUNTED_WOODS,
+          },
+          // Ancient Ruins exit to town
+          {
+            x: 50,
+            y: canvas.height - 70,
+            width: 100,
+            height: 50,
+            type: "town",
+            color: "#4682B4",
+            sprite: "town",
+            zone: CONSTANTS.ZONES.ANCIENT_RUINS,
+          },
+          // Haunted Woods boss entrance
+          {
+            x: canvas.width - 150,
+            y: 100,
+            width: 100,
+            height: 50,
+            type: "hauntedBoss",
+            color: "#b0b0ff",
+            sprite: "hauntedWoods",
+            zone: CONSTANTS.ZONES.HAUNTED_WOODS,
+          },
+          // Ancient Ruins boss entrance
+          {
+            x: canvas.width - 150,
+            y: 100,
+            width: 100,
+            height: 50,
+            type: "ruinsBoss",
+            color: "#b0a080",
+            sprite: "ancientRuins",
+            zone: CONSTANTS.ZONES.ANCIENT_RUINS,
+          },
+          // Haunted Boss exit to Haunted Woods
+          {
+            x: 50,
+            y: canvas.height - 70,
+            width: 100,
+            height: 50,
+            type: "hauntedWoods",
+            color: "#556b2f",
+            sprite: "hauntedWoods",
+            zone: "hauntedBoss",
+          },
+        ];
+      }
+
+      // Initialize townsfolk
+      function initTownsfolk() {
+        if (gameState.currentZone !== CONSTANTS.ZONES.TOWN) return;
+        gameState.townsfolk = [];
+        const townsfolkCount = 100;
+        for (let i = 0; i < townsfolkCount; i++) {
+          gameState.townsfolk.push({
+            x: Math.random() * (canvas.width - 200) + 100,
+            y: Math.random() * (canvas.height - 200) + 100,
+            width: 24,
+            height: 36,
+            direction: ["up", "down", "left", "right"][Math.floor(Math.random() * 4)],
+            moveTimer: Math.floor(Math.random() * 100) + 50,
+            idleTimer: Math.floor(Math.random() * 100) + 50,
+            currentState: Math.random() > 0.5 ? "wandering" : "idle",
+            sprite: "townsfolk",
+          });
+        }
+      }
+
+      // Update townsfolk
+      function updateTownsfolk() {
+        if (gameState.currentZone !== CONSTANTS.ZONES.TOWN) return;
+        for (const person of gameState.townsfolk) {
+          person.moveTimer--;
+          person.idleTimer--;
+
+          if (person.currentState === "wandering" && person.moveTimer <= 0) {
+            person.currentState = "idle";
+            person.idleTimer = Math.floor(Math.random() * 100) + 50;
+            person.direction = ["up", "down", "left", "right"][Math.floor(Math.random() * 4)];
+          } else if (person.currentState === "idle" && person.idleTimer <= 0) {
+            person.currentState = "wandering";
+            person.moveTimer = Math.floor(Math.random() * 100) + 50;
+          }
+
+          if (person.currentState === "wandering") {
+            switch (person.direction) {
+              case "up":
+                person.y -= 0.5;
+                break;
+              case "down":
+                person.y += 0.5;
+                break;
+              case "left":
+                person.x -= 0.5;
+                break;
+              case "right":
+                person.x += 0.5;
+                break;
+            }
+          }
+
+          // Keep townsfolk in bounds
+          person.x = Math.max(50, Math.min(canvas.width - 50 - person.width, person.x));
+          person.y = Math.max(50, Math.min(canvas.height - 50 - person.height, person.y));
+        }
+      }
+
+      // Initialize enemies
+      function initEnemies() {
+        gameState.enemies = [];
+        if (gameState.currentZone === CONSTANTS.ZONES.RAT_FIELDS) {
+          const enemyCount = 12;
+          const types = ["rat", "giantRat", "snake", "bat", "slime"];
+          for (let i = 0; i < enemyCount; i++) {
+            const type = types[Math.floor(Math.random() * types.length)];
+            const def = gameState.enemyTypes[type];
+            gameState.enemies.push({
+              x: Math.random() * (canvas.width - 200) + 100,
+              y: Math.random() * (canvas.height - 200) + 100,
+              width: type === "giantRat" ? 42 : 32,
+              height: type === "giantRat" ? 42 : 32,
+              health: def.health,
+              maxHealth: def.health,
+              damage: def.damage,
+              speed: def.speed,
+              chaseSpeed: def.chaseSpeed,
+              type,
+              color: def.color,
+              gold: def.gold,
+              sprite: def.sprite,
+              chaseDistance: def.chaseDistance,
+              attackCooldown: 0,
+              attackRange: def.attackRange,
+              idleTime: def.idleTime,
+              moveTime: def.moveTime,
+              currentState: "idle",
+              stateTimer: Math.floor(Math.random() * def.idleTime),
+              direction: ["up", "down", "left", "right"][Math.floor(Math.random() * 4)],
+            });
+          }
+        } else if (gameState.currentZone === CONSTANTS.ZONES.BOSS_LAIR) {
+          const now = Date.now();
+          if (now - gameState.lastBossSpawn > gameState.bossRespawnTime || gameState.lastBossSpawn === 0) {
+            const def = gameState.enemyTypes.boss;
+            gameState.enemies.push({
+              x: canvas.width / 2 - 32,
+              y: canvas.height / 2 - 32,
+              width: 64,
+              height: 64,
+              health: def.health,
+              maxHealth: def.health,
+              damage: def.damage,
+              speed: def.speed,
+              chaseSpeed: def.chaseSpeed,
+              type: "boss",
+              color: def.color,
+              gold: def.gold,
+              sprite: def.sprite,
+              chaseDistance: def.chaseDistance,
+              attackCooldown: 0,
+              attackRange: def.attackRange,
+              idleTime: def.idleTime,
+              moveTime: def.moveTime,
+              currentState: "idle",
+              stateTimer: Math.floor(Math.random() * def.idleTime),
+              direction: ["up", "down", "left", "right"][Math.floor(Math.random() * 4)],
+            });
+            gameState.lastBossSpawn = now;
+          }
+        } else if (gameState.currentZone === CONSTANTS.ZONES.HAUNTED_WOODS) {
+          const types = ["ghost", "skeleton"];
+          for (let i = 0; i < 10; i++) {
+            const type = types[Math.floor(Math.random() * types.length)];
+            const def = gameState.enemyTypes[type];
+            gameState.enemies.push({
+              x: Math.random() * (canvas.width - 200) + 100,
+              y: Math.random() * (canvas.height - 200) + 100,
+              width: 32,
+              height: 32,
+              health: def.health,
+              maxHealth: def.health,
+              damage: def.damage,
+              speed: def.speed,
+              chaseSpeed: def.chaseSpeed,
+              type,
+              color: def.color,
+              gold: def.gold,
+              sprite: def.sprite,
+              chaseDistance: def.chaseDistance,
+              attackCooldown: 0,
+              attackRange: def.attackRange,
+              idleTime: def.idleTime,
+              moveTime: def.moveTime,
+              currentState: "idle",
+              stateTimer: Math.floor(Math.random() * def.idleTime),
+              direction: ["up", "down", "left", "right"][Math.floor(Math.random() * 4)],
+              xp: def.xp,
+            });
+          }
+        } else if (gameState.currentZone === CONSTANTS.ZONES.ANCIENT_RUINS) {
+          for (let i = 0; i < 7; i++) {
+            const type = "golem";
+            const def = gameState.enemyTypes[type];
+            gameState.enemies.push({
+              x: Math.random() * (canvas.width - 200) + 100,
+              y: Math.random() * (canvas.height - 200) + 100,
+              width: 40,
+              height: 40,
+              health: def.health,
+              maxHealth: def.health,
+              damage: def.damage,
+              speed: def.speed,
+              chaseSpeed: def.chaseSpeed,
+              type,
+              color: def.color,
+              gold: def.gold,
+              sprite: def.sprite,
+              chaseDistance: def.chaseDistance,
+              attackCooldown: 0,
+              attackRange: def.attackRange,
+              idleTime: def.idleTime,
+              moveTime: def.moveTime,
+              currentState: "idle",
+              stateTimer: Math.floor(Math.random() * def.idleTime),
+              direction: ["up", "down", "left", "right"][Math.floor(Math.random() * 4)],
+              xp: def.xp,
+            });
+          }
+        } else if (gameState.currentZone === "hauntedBoss") {
+          const def = gameState.enemyTypes.hauntedBoss;
+          gameState.enemies.push({
+            x: canvas.width / 2 - 32,
+            y: canvas.height / 2 - 32,
+            width: 64,
+            height: 64,
+            health: def.health,
+            maxHealth: def.health,
+            damage: def.damage,
+            speed: def.speed,
+            chaseSpeed: def.chaseSpeed,
+            type: "hauntedBoss",
+            color: def.color,
+            gold: def.gold,
+            sprite: def.sprite,
+            chaseDistance: def.chaseDistance,
+            attackCooldown: 0,
+            attackRange: def.attackRange,
+            idleTime: def.idleTime,
+            moveTime: def.moveTime,
+            currentState: "idle",
+            stateTimer: Math.floor(Math.random() * def.idleTime),
+            direction: ["up", "down", "left", "right"][Math.floor(Math.random() * 4)],
+            xp: def.xp,
+          });
+        } else if (gameState.currentZone === "ruinsBoss") {
+          const def = gameState.enemyTypes.ruinsBoss;
+          gameState.enemies.push({
+            x: canvas.width / 2 - 32,
+            y: canvas.height / 2 - 32,
+            width: 64,
+            height: 64,
+            health: def.health,
+            maxHealth: def.health,
+            damage: def.damage,
+            speed: def.speed,
+            chaseSpeed: def.chaseSpeed,
+            type: "ruinsBoss",
+            color: def.color,
+            gold: def.gold,
+            sprite: def.sprite,
+            chaseDistance: def.chaseDistance,
+            attackCooldown: 0,
+            attackRange: def.attackRange,
+            idleTime: def.idleTime,
+            moveTime: def.moveTime,
+            currentState: "idle",
+            stateTimer: Math.floor(Math.random() * def.idleTime),
+            direction: ["up", "down", "left", "right"][Math.floor(Math.random() * 4)],
+            xp: def.xp,
+          });
+        } else if (gameState.currentZone === "guardBoss") {
+          const def = gameState.enemyTypes.guardBoss;
+          gameState.enemies.push({
+            x: canvas.width / 2 - 24,
+            y: canvas.height / 2 - 32,
+            width: 48,
+            height: 64,
+            health: def.health,
+            maxHealth: def.health,
+            damage: def.damage,
+            speed: def.speed,
+            chaseSpeed: def.chaseSpeed,
+            type: "guardBoss",
+            color: def.color,
+            gold: def.gold,
+            sprite: def.sprite,
+            chaseDistance: def.chaseDistance,
+            attackCooldown: 0,
+            attackRange: def.attackRange,
+            idleTime: def.idleTime,
+            moveTime: def.moveTime,
+            currentState: "idle",
+            stateTimer: Math.floor(Math.random() * def.idleTime),
+            direction: ["up", "down", "left", "right"][Math.floor(Math.random() * 4)],
+            xp: def.xp,
+          });
+        }
+      }
+
+      // Save/Load
+      function saveGame() {
+        const saveData = {
+          player: gameState.player,
+          currentZone: gameState.currentZone,
+          lastBossSpawn: gameState.lastBossSpawn,
+        };
+        localStorage.setItem("rpgAdventureSave", JSON.stringify(saveData));
+        showMessage("Game saved successfully!");
+      }
+
+      function loadGame() {
+        const saveData = localStorage.getItem("rpgAdventureSave");
+        if (!saveData) {
+          showMessage("No save data found");
+          return;
+        }
+        try {
+          const parsed = JSON.parse(saveData);
+          Object.assign(gameState.player, parsed.player);
+          if (typeof gameState.player.statPoints !== "number") gameState.player.statPoints = 0;
+          if (typeof gameState.player.bonusDamage !== "number") gameState.player.bonusDamage = 0;
+          if (typeof gameState.player.buffAttackSpeedMult !== "number")
+            gameState.player.buffAttackSpeedMult = 1;
+
+          gameState.currentZone = parsed.currentZone;
+          gameState.lastBossSpawn = parsed.lastBossSpawn;
+
+          // Adjust player position based on zone
+          if (gameState.currentZone === CONSTANTS.ZONES.TOWN) {
+            gameState.player.x = canvas.width / 2;
+            gameState.player.y = canvas.height / 2;
+          } else {
+            gameState.player.x = 100;
+            gameState.player.y = 100;
+          }
+
+          initEnemies();
+          initTownsfolk();
+          updatePlayerStats(); // recompute derived stats after load
+          updateUI();
+          showMessage("Game loaded successfully!");
+        } catch (e) {
+          console.error("Load error:", e);
+          showMessage("Failed to load save data");
+        }
+      }
+
+      document.getElementById("saveBtn").addEventListener("click", saveGame);
+      document.getElementById("loadBtn").addEventListener("click", loadGame);
+
+      // Input
+      window.addEventListener("keydown", (e) => {
+        // Prevent default for keys we use
+        if (
+          [
+            " ",
+            "r",
+            "R",
+            "p",
+            "P",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "w",
+            "a",
+            "s",
+            "d",
+            "W",
+            "A",
+            "S",
+            "D",
+            "ArrowUp",
+            "ArrowDown",
+            "ArrowLeft",
+            "ArrowRight",
+            "Escape",
+            "i",
+            "I",
+          ].includes(e.key)
+        ) {
+          e.preventDefault();
+        }
+
+        gameState.keys[e.key] = true;
+
+        // Attacks
+        if (!gameState.inShop && !gameState.inInventory) {
+          if (e.key === "ArrowUp" && gameState.player.attackCooldown <= 0) {
+            gameState.player.attackDirection = "up";
+            gameState.player.direction = "up";
+            attack();
+            gameState.player.attackCooldown =
+              CONSTANTS.PLAYER.BASE_ATTACK_COOLDOWN / gameState.player.attackSpeed;
+          }
+          if (e.key === "ArrowDown" && gameState.player.attackCooldown <= 0) {
+            gameState.player.attackDirection = "down";
+            gameState.player.direction = "down";
+            attack();
+            gameState.player.attackCooldown =
+              CONSTANTS.PLAYER.BASE_ATTACK_COOLDOWN / gameState.player.attackSpeed;
+          }
+          if (e.key === "ArrowLeft" && gameState.player.attackCooldown <= 0) {
+            gameState.player.attackDirection = "left";
+            gameState.player.direction = "left";
+            attack();
+            gameState.player.attackCooldown =
+              CONSTANTS.PLAYER.BASE_ATTACK_COOLDOWN / gameState.player.attackSpeed;
+          }
+          if (e.key === "ArrowRight" && gameState.player.attackCooldown <= 0) {
+            gameState.player.attackDirection = "right";
+            gameState.player.direction = "right";
+            attack();
+            gameState.player.attackCooldown =
+              CONSTANTS.PLAYER.BASE_ATTACK_COOLDOWN / gameState.player.attackSpeed;
+          }
+        }
+
+        // Rest with R in home
+        if (e.key.toLowerCase() === "r" && isPlayerInBuilding("home")) {
+          gameState.player.health = gameState.player.maxHealth;
+          showMessage("You feel rested and healed!");
+          updateUI();
+        }
+
+        // Use potion with P
+        if (e.key.toLowerCase() === "p" && gameState.player.potions > 0) {
+          gameState.player.health = Math.min(
+            gameState.player.health + 30,
+            gameState.player.maxHealth
+          );
+          gameState.player.potions--;
+          showMessage("You drank a health potion! +30 HP");
+          updateUI();
+        }
+
+        // Inventory
+        if (e.key.toLowerCase() === "i" && !gameState.inShop) {
+          toggleInventory();
+        }
+
+        // Shop interactions
+        if (gameState.inShop) {
+          if (e.key === " " || e.key === "Escape") {
+            exitShop();
+          }
+          const num = parseInt(e.key, 10);
+          if (!Number.isNaN(num)) {
+            const shop = gameState.shops[gameState.currentShop];
+            if (num >= 1 && num <= shop.items.length) {
+              buyItem(num - 1);
+            }
+          }
+        } else if (gameState.inInventory) {
+          if (e.key === " " || e.key === "Escape") {
+            toggleInventory();
+          }
+        } else {
+          // Enter shop/buildings with space
+          if (e.key === " ") {
+            const buildingType = isPlayerInBuilding(["shop", "blacksmith"]);
+            if (buildingType && gameState.currentZone === CONSTANTS.ZONES.TOWN) {
+              enterShop(buildingType);
+            }
+          }
+        }
+      });
+
+      window.addEventListener("keyup", (e) => {
+        gameState.keys[e.key] = false;
+      });
+
+      // Collision with buildings
+      function isPlayerInBuilding(type) {
+        const player = gameState.player;
+        const types = Array.isArray(type) ? type : [type];
+
+        for (const building of gameState.buildings) {
+          if (
+            building.zone === gameState.currentZone &&
+            player.x + player.width > building.x &&
+            player.x < building.x + building.width &&
+            player.y + player.height > building.y &&
+            player.y < building.y + building.height
+          ) {
+            if (!type || types.includes(building.type)) {
+              return building.type;
+            }
+          }
+        }
+        return false;
+      }
+
+      // Shop
+      function enterShop(shopType) {
+        if (gameState.shopLockdown) {
+          showMessage("Shops are closed to murderers!");
+          return;
+        }
+        gameState.inShop = true;
+        gameState.currentShop = shopType;
+
+        const shop = gameState.shops[shopType];
+        const menu = document.getElementById("shopMenu");
+        const title = document.getElementById("shopTitle");
+        const list = document.getElementById("shopItems");
+
+        title.textContent = shop.title;
+        list.innerHTML = "";
+
+        shop.items.forEach((item, index) => {
+          const itemEl = document.createElement("div");
+          itemEl.className = "shop-item";
+          itemEl.innerHTML = `<strong>${index + 1}. ${item.name}</strong> - ${
+            item.cost
+          }g<br><em>${item.description}</em>`;
+          itemEl.style.color = gameState.player.gold >= item.cost ? "white" : "#aaa";
+          itemEl.addEventListener("click", () => buyItem(index));
+          list.appendChild(itemEl);
+        });
+
+        menu.style.display = "block";
+      }
+
+      function exitShop() {
+        gameState.inShop = false;
+        gameState.currentShop = null;
+        document.getElementById("shopMenu").style.display = "none";
+      }
+
+      // Inventory
+      function toggleInventory() {
+        gameState.inInventory = !gameState.inInventory;
+        if (gameState.inInventory) {
+          updateInventoryUI();
+          document.getElementById("inventoryMenu").style.display = "block";
+        } else {
+          document.getElementById("inventoryMenu").style.display = "none";
+        }
+      }
+
+      // Tab switching
+      document.querySelectorAll(".inventory-tab").forEach((tabEl) => {
+        tabEl.addEventListener("click", () => {
+          updateInventoryUI(tabEl.dataset.tab);
+        });
+      });
+
+      function updateInventoryUI(tab = "weapons") {
+        const inventoryItems = document.getElementById("inventoryItems");
+        inventoryItems.innerHTML = "";
+
+        // Update active tab
+        document.querySelectorAll(".inventory-tab").forEach((tabEl) => {
+          tabEl.classList.remove("active");
+          if (tabEl.dataset.tab === tab) tabEl.classList.add("active");
+        });
+
+        // Equipped display
+        document.getElementById("equippedWeapon").textContent = gameState.player.equippedWeapon
+          ? gameState.player.equippedWeapon.name
+          : "None";
+        document.getElementById("equippedArmor").textContent = gameState.player.equippedArmor
+          ? gameState.player.equippedArmor.name
+          : "None";
+
+        // Slot styles
+        document.getElementById("weaponSlot").className = gameState.player.equippedWeapon
+          ? "equipment-slot filled"
+          : "equipment-slot";
+        document.getElementById("armorSlot").className = gameState.player.equippedArmor
+          ? "equipment-slot filled"
+          : "equipment-slot";
+
+        // Filter items by tab
+        const itemsToShow = gameState.player.inventory.filter((item) => {
+          if (tab === "weapons") return item.type === CONSTANTS.ITEM_TYPES.WEAPON;
+          if (tab === "armor") return item.type === CONSTANTS.ITEM_TYPES.ARMOR;
+          if (tab === "consumables") return item.type === CONSTANTS.ITEM_TYPES.CONSUMABLE;
+          return false;
+        });
+
+        if (itemsToShow.length === 0) {
+          const emptyMsg = document.createElement("div");
+          emptyMsg.textContent = "No items in this category";
+          emptyMsg.style.textAlign = "center";
+          emptyMsg.style.color = "#aaa";
+          inventoryItems.appendChild(emptyMsg);
+        } else {
+          // Display items
+          itemsToShow.forEach((item) => {
+            const itemEl = document.createElement("div");
+            itemEl.className = "inventory-item";
+
+            const isEquipped =
+              (item.type === CONSTANTS.ITEM_TYPES.WEAPON &&
+                gameState.player.equippedWeapon === item) ||
+              (item.type === CONSTANTS.ITEM_TYPES.ARMOR &&
+                gameState.player.equippedArmor === item);
+
+            if (isEquipped) itemEl.classList.add("equipped");
+
+            itemEl.innerHTML = `<strong>${item.name}</strong><br><em>${item.description}</em>`;
+            itemEl.addEventListener("click", () => {
+              if (item.type === CONSTANTS.ITEM_TYPES.WEAPON) {
+                equipItem(item, "weapon");
+              } else if (item.type === CONSTANTS.ITEM_TYPES.ARMOR) {
+                equipItem(item, "armor");
+              } else if (item.type === CONSTANTS.ITEM_TYPES.CONSUMABLE) {
+                useConsumable(item);
+              }
+            });
+
+            inventoryItems.appendChild(itemEl);
+          });
+        }
+
+        // Stat allocation in inventory
+        const statAlloc = document.getElementById("statAllocation");
+        if (gameState.player.statPoints > 0) {
+          statAlloc.style.display = "block";
+          document.getElementById("statPointsInv").textContent = gameState.player.statPoints;
+        } else {
+          statAlloc.style.display = "none";
+        }
+      }
+
+      // Stat allocation buttons (inventory)
+      document.getElementById("addHealthInv").addEventListener("click", () => allocateStat("health"));
+      document.getElementById("addDamageInv").addEventListener("click", () => allocateStat("damage"));
+      document.getElementById("addSpeedInv").addEventListener("click", () => allocateStat("speed"));
+
+      // Optional modal buttons (in case used later)
+      document.getElementById("addHealth").addEventListener("click", () => allocateStat("health"));
+      document.getElementById("addDamage").addEventListener("click", () => allocateStat("damage"));
+      document.getElementById("addSpeed").addEventListener("click", () => allocateStat("speed"));
+      document.getElementById("closeStatModal").addEventListener("click", () => {
+        document.getElementById("statModal").style.display = "none";
+      });
+
+      function allocateStat(type) {
+        if (gameState.player.statPoints <= 0) return;
+        if (type === "health") {
+          gameState.player.maxHealth += 10;
+          gameState.player.health = gameState.player.maxHealth;
+        } else if (type === "damage") {
+          gameState.player.baseDamage += 2;
+        } else if (type === "speed") {
+          gameState.player.speed += 0.2;
+        }
+        gameState.player.statPoints -= 1;
+        updatePlayerStats();
+        updateInventoryUI(document.querySelector(".inventory-tab.active").dataset.tab);
+        updateUI();
+      }
+
+      // Equip and consumables
+      function equipItem(item, slotType) {
+        if (slotType === "weapon") {
+          if (gameState.player.equippedWeapon === item) {
+            gameState.player.equippedWeapon = null;
+            showMessage(`Unequipped ${item.name}`);
+          } else {
+            gameState.player.equippedWeapon = item;
+            showMessage(`Equipped ${item.name}`);
+          }
+        } else if (slotType === "armor") {
+          if (gameState.player.equippedArmor === item) {
+            gameState.player.equippedArmor = null;
+            showMessage(`Unequipped ${item.name}`);
+          } else {
+            gameState.player.equippedArmor = item;
+            showMessage(`Equipped ${item.name}`);
+          }
+        }
+        updatePlayerStats();
+        updateInventoryUI(document.querySelector(".inventory-tab.active").dataset.tab);
+      }
+
+      function useConsumable(item) {
+        const parts = item.effect.split(":");
+        const effect = parts[0];
+        const value = parseFloat(parts[1]);
+        switch (effect) {
+          case "potion":
+            gameState.player.health = Math.min(
+              gameState.player.health + 30,
+              gameState.player.maxHealth
+            );
+            showMessage(`You used a health potion! +30 HP`);
+            break;
+          case "maxHealth":
+            gameState.player.maxHealth += value;
+            gameState.player.health += value;
+            showMessage(`Your max HP increased by ${value}!`);
+            break;
+          case "speed":
+            gameState.player.speed += value;
+            showMessage(`Your speed increased by ${value}!`);
+            break;
+          case "damage":
+            applyTempBuff("damage", value, 30000);
+            showMessage(`+${value} damage for 30s!`);
+            break;
+          case "attackSpeed":
+            applyTempBuff("attackSpeed", value, 30000);
+            showMessage(`Attack speed buffed for 30s!`);
+            break;
+        }
+        // Remove item from inventory
+        const idx = gameState.player.inventory.findIndex((i) => i === item);
+        if (idx !== -1) gameState.player.inventory.splice(idx, 1);
+        updatePlayerStats();
+        updateUI();
+        updateInventoryUI(document.querySelector(".inventory-tab.active").dataset.tab);
+      }
+
+      // Temporary buffs (reworked to combine with equipment properly)
+      let tempBuffs = [];
+      function applyTempBuff(stat, value, duration) {
+        if (stat === "damage") {
+          gameState.player.bonusDamage += value;
+          updatePlayerStats();
+          tempBuffs.push({ stat, value, expires: Date.now() + duration });
+        } else if (stat === "attackSpeed") {
+          gameState.player.buffAttackSpeedMult *= value;
+          updatePlayerStats();
+          tempBuffs.push({ stat, value, expires: Date.now() + duration });
+        }
+      }
+      function updateTempBuffs() {
+        const now = Date.now();
+        for (let i = tempBuffs.length - 1; i >= 0; i--) {
+          if (now > tempBuffs[i].expires) {
+            const b = tempBuffs[i];
+            if (b.stat === "damage") {
+              gameState.player.bonusDamage -= b.value;
+            } else if (b.stat === "attackSpeed") {
+              // reverse multiplier
+              gameState.player.buffAttackSpeedMult /= b.value;
+            }
+            tempBuffs.splice(i, 1);
+            updatePlayerStats();
+          }
+        }
+      }
+
+      // Update player stats based on equipment + buffs
+      function updatePlayerStats() {
+        // Reset to equipment-agnostic baseline
+        let equipDamage = 0;
+        let equipAtkSpeed = CONSTANTS.PLAYER.BASE_ATTACK_SPEED;
+
+        // Weapon effects
+        if (gameState.player.equippedWeapon) {
+          const effects = gameState.player.equippedWeapon.effect.split(":");
+          for (let i = 0; i < effects.length; i += 2) {
+            const ef = effects[i];
+            const val = parseFloat(effects[i + 1]);
+            if (ef === "damage") equipDamage += val;
+            else if (ef === "attackSpeed") equipAtkSpeed = val; // weapon defines base
+          }
+        }
+
+        // Armor effects
+        gameState.player.armor = 0;
+        if (gameState.player.equippedArmor) {
+          const [ef, val] = gameState.player.equippedArmor.effect.split(":");
+          if (ef === "armor") gameState.player.armor = parseInt(val, 10);
+        }
+
+        // Final derived stats
+        gameState.player.currentDamage =
+          gameState.player.baseDamage + equipDamage + gameState.player.bonusDamage;
+        gameState.player.attackSpeed = equipAtkSpeed * gameState.player.buffAttackSpeedMult;
+
+        updateUI();
+      }
+
+      // Buy items
+      function buyItem(index) {
+        const shop = gameState.shops[gameState.currentShop];
+        if (index < 0 || index >= shop.items.length) {
+          showMessage("Invalid selection!");
+          return;
+        }
+        const item = shop.items[index];
+        if (gameState.player.gold < item.cost) {
+          showMessage("Not enough gold!");
+          return;
+        }
+        gameState.player.inventory.push({ ...item });
+        gameState.player.gold -= item.cost;
+        showMessage(`You bought ${item.name}!`);
+        updateUI();
+        enterShop(gameState.currentShop); // refresh
+      }
+
+      // Messaging
+      let messageTimer = null;
+      function showMessage(msg) {
+        const el = document.getElementById("message");
+        el.textContent = msg;
+        el.style.display = "block";
+        if (messageTimer) clearTimeout(messageTimer);
+        messageTimer = setTimeout(() => {
+          el.style.display = "none";
+          messageTimer = null;
+        }, CONSTANTS.MESSAGE_DURATION);
+      }
+
+      // UI updates
+      function updateUI() {
+        document.getElementById("health").textContent = Math.max(
+          0,
+          Math.floor(gameState.player.health)
+        );
+        document.getElementById("maxHealth").textContent = Math.floor(
+          gameState.player.maxHealth
+        );
+        document.getElementById("gold").textContent = gameState.player.gold;
+        document.getElementById("damage").textContent = gameState.player.currentDamage;
+        document.getElementById("attackSpeed").textContent =
+          gameState.player.attackSpeed.toFixed(2);
+        document.getElementById("armor").textContent = gameState.player.armor;
+        document.getElementById("potions").textContent = gameState.player.potions;
+        document.getElementById("xp").textContent = gameState.player.xp;
+        document.getElementById("xpToNext").textContent = gameState.player.xpToNext;
+        document.getElementById("level").textContent = gameState.player.level;
+        document.getElementById("kills").textContent = gameState.townsfolkKills;
+        document.getElementById("murdererNotice").style.display = gameState.murderer
+          ? "block"
+          : "none";
+
+        // Update top-left UI health bar fill
+        const uiPercent = (gameState.player.health / gameState.player.maxHealth) * 100;
+        document.getElementById("healthBar").style.width = `${Math.max(0, uiPercent)}%`;
+      }
+
+      // Leveling
+      function checkLevelUp() {
+        while (gameState.player.xp >= gameState.player.xpToNext) {
+          gameState.player.xp -= gameState.player.xpToNext;
+          gameState.player.level += 1;
+          // Base increases
+          gameState.player.maxHealth += 10;
+          gameState.player.health = gameState.player.maxHealth;
+          gameState.player.baseDamage += 2;
+          gameState.player.xpToNext = Math.floor(gameState.player.xpToNext * 1.25);
+          // Stat points
+          gameState.player.statPoints = (gameState.player.statPoints || 0) + 2;
+          showMessage(`Level up! You are now level ${gameState.player.level}.`);
+        }
+      }
+
+      function awardXP(amount) {
+        gameState.player.xp += amount;
+        checkLevelUp();
+        updateUI();
+      }
+
+      // Attack
+      function attack() {
+        const player = gameState.player;
+        let attackX, attackY, attackW, attackH;
+
+        switch (player.attackDirection) {
+          case "up":
+            attackX = player.x + player.width / 2 - CONSTANTS.PLAYER.ATTACK_WIDTH / 2;
+            attackY = player.y - CONSTANTS.PLAYER.ATTACK_RANGE;
+            attackW = CONSTANTS.PLAYER.ATTACK_WIDTH;
+            attackH = CONSTANTS.PLAYER.ATTACK_RANGE;
+            break;
+          case "down":
+            attackX = player.x + player.width / 2 - CONSTANTS.PLAYER.ATTACK_WIDTH / 2;
+            attackY = player.y + player.height;
+            attackW = CONSTANTS.PLAYER.ATTACK_WIDTH;
+            attackH = CONSTANTS.PLAYER.ATTACK_RANGE;
+            break;
+          case "left":
+            attackX = player.x - CONSTANTS.PLAYER.ATTACK_RANGE;
+            attackY = player.y + player.height / 2 - CONSTANTS.PLAYER.ATTACK_WIDTH / 2;
+            attackW = CONSTANTS.PLAYER.ATTACK_RANGE;
+            attackH = CONSTANTS.PLAYER.ATTACK_WIDTH;
+            break;
+          case "right":
+            attackX = player.x + player.width;
+            attackY = player.y + player.height / 2 - CONSTANTS.PLAYER.ATTACK_WIDTH / 2;
+            attackW = CONSTANTS.PLAYER.ATTACK_RANGE;
+            attackH = CONSTANTS.PLAYER.ATTACK_WIDTH;
+            break;
+        }
+
+        // Hit enemies
+        for (let i = gameState.enemies.length - 1; i >= 0; i--) {
+          const enemy = gameState.enemies[i];
+          if (
+            attackX < enemy.x + enemy.width &&
+            attackX + attackW > enemy.x &&
+            attackY < enemy.y + enemy.height &&
+            attackY + attackH > enemy.y
+          ) {
+            triggerAttackFeedback();
+
+            // Critical 20%
+            const isCritical = Math.random() < 0.2;
+            const damage = isCritical
+              ? Math.floor(gameState.player.currentDamage * 1.5)
+              : gameState.player.currentDamage;
+
+            enemy.health -= damage;
+            if (isCritical) {
+              showMessage(`Critical hit! ${damage} damage to ${enemy.type}!`);
+            } else {
+              showMessage(`You hit the ${enemy.type} for ${damage} damage!`);
+            }
+
+            // Death
+            if (enemy.health <= 0) {
+              const goldEarned = enemy.gold;
+              gameState.player.gold += goldEarned;
+              const xp = gameState.enemyTypes[enemy.type]?.xp || 10;
+              awardXP(xp);
+
+              // Special: guard boss
+              if (enemy.type === "guardBoss") {
+                gameState.guardBossDefeated = true;
+                gameState.shopLockdown = true;
+                showMessage(
+                  "You killed the Town Guard! Shops are closed forever. You loot the Guard's Badge!"
+                );
+                gameState.player.inventory.push({
+                  name: "Guard's Badge",
+                  cost: 0,
+                  effect: "",
+                  description:
+                    "A badge of shame. Shops will never open for you again.",
+                  type: CONSTANTS.ITEM_TYPES.CONSUMABLE,
+                });
+                gameState.guardBossLevel = (gameState.guardBossLevel || 0) + 1;
+                setTimeout(() => {
+                  gameState.currentZone = "guardBoss";
+                  initEnemies();
+                  // More guards next time
+                  for (let j = 1; j < gameState.guardBossLevel; j++) {
+                    const def = gameState.enemyTypes.guardBoss;
+                    gameState.enemies.push({
+                      x: canvas.width / 2 - 24 + Math.random() * 100 - 50,
+                      y: canvas.height / 2 - 32 + Math.random() * 100 - 50,
+                      width: 48,
+                      height: 64,
+                      health: def.health,
+                      maxHealth: def.health,
+                      damage: def.damage,
+                      speed: def.speed,
+                      chaseSpeed: def.chaseSpeed,
+                      type: "guardBoss",
+                      color: def.color,
+                      gold: def.gold,
+                      sprite: def.sprite,
+                      chaseDistance: def.chaseDistance,
+                      attackCooldown: 0,
+                      attackRange: def.attackRange,
+                      idleTime: def.idleTime,
+                      moveTime: def.moveTime,
+                      currentState: "idle",
+                      stateTimer: Math.floor(Math.random() * def.idleTime),
+                      direction: ["up", "down", "left", "right"][Math.floor(Math.random() * 4)],
+                      xp: def.xp,
+                    });
+                  }
+                }, 1000);
+              }
+
+              gameState.enemies.splice(i, 1);
+              showMessage(`You defeated the ${enemy.type} and earned ${goldEarned} gold!`);
+            }
+            updateUI();
+          }
+        }
+
+        // Townsfolk (in town)
+        if (gameState.currentZone === CONSTANTS.ZONES.TOWN) {
+          for (let i = gameState.townsfolk.length - 1; i >= 0; i--) {
+            const person = gameState.townsfolk[i];
+            if (
+              attackX < person.x + person.width &&
+              attackX + attackW > person.x &&
+              attackY < person.y + person.height &&
+              attackY + attackH > person.y
+            ) {
+              // Kill townsfolk
+              gameState.townsfolk.splice(i, 1);
+              gameState.townsfolkKills = (gameState.townsfolkKills || 0) + 1;
+              awardXP(5);
+              showMessage("You killed a townsfolk! Guards are watching...");
+              if (
+                gameState.townsfolkKills >= CONSTANTS.TOWNSFOLK_KILL_THRESHOLD &&
+                !gameState.murderer
+              ) {
+                gameState.murderer = true;
+                showMessage(
+                  "You are now a murderer! Shops are closed. The Town Guard is after you!"
+                );
+                gameState.shopLockdown = true;
+                // Spawn guard boss
+                setTimeout(() => {
+                  gameState.currentZone = "guardBoss";
+                  initEnemies();
+                }, 1000);
+              }
+              updateUI();
+            }
+          }
+        }
+      }
+
+      function changeZone(zoneType) {
+        if (
+          zoneType === CONSTANTS.ZONES.RAT_FIELDS &&
+          gameState.currentZone !== CONSTANTS.ZONES.RAT_FIELDS
+        ) {
+          gameState.currentZone = CONSTANTS.ZONES.RAT_FIELDS;
+          showMessage("Entered Rat Fields - Watch out for enemies!");
+          gameState.player.x = 100;
+          gameState.player.y = 100;
+        } else if (
+          zoneType === CONSTANTS.ZONES.BOSS_LAIR &&
+          gameState.currentZone !== CONSTANTS.ZONES.BOSS_LAIR
+        ) {
+          gameState.currentZone = CONSTANTS.ZONES.BOSS_LAIR;
+          showMessage("Entered Boss Lair - Prepare for battle!");
+          gameState.player.x = 100;
+          gameState.player.y = 100;
+        } else if (
+          zoneType === CONSTANTS.ZONES.HAUNTED_WOODS &&
+          gameState.currentZone !== CONSTANTS.ZONES.HAUNTED_WOODS
+        ) {
+          gameState.currentZone = CONSTANTS.ZONES.HAUNTED_WOODS;
+          showMessage("Entered Haunted Woods - Spooky!");
+          gameState.player.x = 100;
+          gameState.player.y = 100;
+        } else if (
+          zoneType === CONSTANTS.ZONES.ANCIENT_RUINS &&
+          gameState.currentZone !== CONSTANTS.ZONES.ANCIENT_RUINS
+        ) {
+          gameState.currentZone = CONSTANTS.ZONES.ANCIENT_RUINS;
+          showMessage("Entered Ancient Ruins - Beware the golems!");
+          gameState.player.x = 100;
+          gameState.player.y = 100;
+        } else if (zoneType === "hauntedBoss") {
+          gameState.currentZone = "hauntedBoss";
+          showMessage("The Haunted Spirit appears!");
+          gameState.player.x = 100;
+          gameState.player.y = 100;
+        } else if (zoneType === "ruinsBoss") {
+          gameState.currentZone = "ruinsBoss";
+          showMessage("The Ancient Golem awakens!");
+          gameState.player.x = 100;
+          gameState.player.y = 100;
+        } else if (zoneType === "guardBoss") {
+          gameState.currentZone = "guardBoss";
+          showMessage("The Town Guard confronts you!");
+          gameState.player.x = canvas.width / 2;
+          gameState.player.y = canvas.height / 2;
+        } else if (
+          zoneType === CONSTANTS.ZONES.TOWN &&
+          gameState.currentZone !== CONSTANTS.ZONES.TOWN
+        ) {
+          gameState.currentZone = CONSTANTS.ZONES.TOWN;
+          showMessage("Returned to Town - Safe and sound!");
+          gameState.player.x = canvas.width / 2;
+          gameState.player.y = canvas.height / 2;
+        }
+        initEnemies();
+        initTownsfolk();
+      }
+
+      function checkBuildingCollisions() {
+        const player = gameState.player;
+        for (const building of gameState.buildings) {
+          if (
+            building.zone === gameState.currentZone &&
+            player.x + player.width > building.x &&
+            player.x < building.x + building.width &&
+            player.y + player.height > building.y &&
+            player.y < building.y + building.height
+          ) {
+            if (
+              (building.type === "ratFields" ||
+                building.type === "bossLair" ||
+                building.type === "town" ||
+                building.type === "hauntedWoods" ||
+                building.type === "ancientRuins" ||
+                building.type === "hauntedBoss" ||
+                building.type === "ruinsBoss") &&
+              gameState.currentZone !== building.type
+            ) {
+              changeZone(building.type);
+            }
+            return building.type;
+          }
+        }
+        return null;
+      }
+
+      // Enemy AI
+      function updateEnemies() {
+        const player = gameState.player;
+        for (const enemy of gameState.enemies) {
+          const dx = player.x - enemy.x;
+          const dy = player.y - enemy.y;
+          const distance = Math.hypot(dx, dy);
+
+          // Separation from player
+          const minDist = (enemy.width + player.width) * 0.4;
+          if (distance < minDist && distance > 0) {
+            const push = (minDist - distance) / minDist;
+            enemy.x -= (dx / distance) * push * 2;
+            enemy.y -= (dy / distance) * push * 2;
+          }
+
+          let willMove = true;
+          if (distance < minDist + 2) willMove = false;
+
+          // State machine
+          enemy.stateTimer--;
+          if (enemy.stateTimer <= 0) {
+            if (enemy.currentState === "idle") {
+              enemy.currentState = "wandering";
+              enemy.stateTimer = enemy.moveTime;
+              enemy.direction = ["up", "down", "left", "right"][Math.floor(Math.random() * 4)];
+            } else {
+              enemy.currentState = "idle";
+              enemy.stateTimer = enemy.idleTime;
+            }
+          }
+
+          // Chase
+          if (distance < enemy.chaseDistance) {
+            enemy.currentState = "chasing";
+            const nx = dx / distance || 0;
+            const ny = dy / distance || 0;
+
+            if (willMove) {
+              enemy.x += nx * enemy.chaseSpeed;
+              enemy.y += ny * enemy.chaseSpeed;
+            }
+            enemy.direction = nx > 0 ? "right" : "left";
+
+            if (distance < enemy.attackRange && enemy.attackCooldown <= 0) {
+              const damage = Math.max(1, Math.floor(enemy.damage * (1 - player.armor / 100)));
+              player.health -= damage;
+              showMessage(`The ${enemy.type} hit you for ${damage} damage!`);
+              updateUI();
+
+              // Knockback
+              player.x -= nx * 15;
+              player.y -= ny * 15;
+
+              enemy.attackCooldown = gameState.enemyTypes[enemy.type].attackCooldown;
+            }
+          } else if (enemy.currentState === "wandering") {
+            let nextX = enemy.x,
+              nextY = enemy.y;
+            switch (enemy.direction) {
+              case "up":
+                nextY -= enemy.speed;
+                break;
+              case "down":
+                nextY += enemy.speed;
+                break;
+              case "left":
+                nextX -= enemy.speed;
+                break;
+              case "right":
+                nextX += enemy.speed;
+                break;
+            }
+            // Only move if not colliding with player
+            if (
+              !(
+                nextX + enemy.width > player.x &&
+                nextX < player.x + player.width &&
+                nextY + enemy.height > player.y &&
+                nextY < player.y + player.height
+              )
+            ) {
+              enemy.x = nextX;
+              enemy.y = nextY;
+            }
+          }
+
+          // Cooldown
+          if (enemy.attackCooldown > 0) enemy.attackCooldown--;
+
+          // Bounds
+          enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
+          enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
+
+          if (enemy.x <= 0) enemy.direction = "right";
+          if (enemy.x >= canvas.width - enemy.width) enemy.direction = "left";
+          if (enemy.y <= 0) enemy.direction = "down";
+          if (enemy.y >= canvas.height - enemy.height) enemy.direction = "up";
+        }
+      }
+
+      // Decorations cache
+      const decorationsCache = {};
+
+      function getZoneDecorations(zone) {
+        if (decorationsCache[zone]) return decorationsCache[zone];
+        const decos = [];
+        if (zone === CONSTANTS.ZONES.TOWN) {
+          for (let i = 0; i < 8; i++) {
+            decos.push({ type: "tree", x: 80 + i * 120, y: 80 });
+          }
+          for (let i = 0; i < 20; i++) {
+            decos.push({
+              type: "flower",
+              x: 60 + Math.random() * (canvas.width - 120),
+              y: 120 + Math.random() * (canvas.height - 200),
+            });
+          }
+        } else if (zone === CONSTANTS.ZONES.RAT_FIELDS) {
+          for (let i = 0; i < 60; i++) {
+            decos.push({
+              type: "grass",
+              x: 40 + Math.random() * (canvas.width - 80),
+              y: 40 + Math.random() * (canvas.height - 80),
+              dx: Math.random() * 8 - 4,
+              dy: -18 - Math.random() * 8,
+            });
+          }
+        } else if (zone === CONSTANTS.ZONES.BOSS_LAIR) {
+          for (let i = 0; i < 10; i++) {
+            decos.push({
+              type: "bone",
+              x: 100 + Math.random() * (canvas.width - 200),
+              y: 100 + Math.random() * (canvas.height - 200),
+            });
+            decos.push({
+              type: "blood",
+              x: 120 + Math.random() * (canvas.width - 240),
+              y: 120 + Math.random() * (canvas.height - 240),
+              r: 18,
+            });
+          }
+        } else if (zone === CONSTANTS.ZONES.HAUNTED_WOODS || zone === "hauntedBoss") {
+          for (let i = 0; i < 10; i++) {
+            decos.push({
+              type: "ghostTree",
+              x: 80 + Math.random() * (canvas.width - 160),
+              y: 80 + Math.random() * (canvas.height - 160),
+              h: 40 + Math.random() * 30,
+            });
+          }
+          for (let i = 0; i < 5; i++) {
+            decos.push({
+              type: "fog",
+              x: 200 + Math.random() * (canvas.width - 400),
+              y: 200 + Math.random() * (canvas.height - 400),
+              r: 80 + Math.random() * 60,
+            });
+          }
+        } else if (zone === CONSTANTS.ZONES.ANCIENT_RUINS || zone === "ruinsBoss") {
+          for (let i = 0; i < 8; i++) {
+            decos.push({ type: "pillar", x: 120 + i * 120, y: 80 + (i % 2) * 200 });
+          }
+          for (let i = 0; i < 20; i++) {
+            decos.push({
+              type: "moss",
+              x: 100 + Math.random() * (canvas.width - 200),
+              y: 100 + Math.random() * (canvas.height - 200),
+            });
+          }
+        }
+        decorationsCache[zone] = decos;
+        return decos;
+      }
+
+      function drawZoneDecorations() {
+        const decos = getZoneDecorations(gameState.currentZone);
+        for (const deco of decos) {
+          if (deco.type === "tree") {
+            ctx.fillStyle = "#228B22";
+            ctx.beginPath();
+            ctx.arc(deco.x, deco.y, 18, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#8B4513";
+            ctx.fillRect(deco.x - 4, deco.y + 18, 8, 18);
+          } else if (deco.type === "flower") {
+            ctx.fillStyle = "#ffb6c1";
+            ctx.beginPath();
+            ctx.arc(deco.x, deco.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (deco.type === "grass") {
+            ctx.strokeStyle = "#3cb371";
+            ctx.beginPath();
+            ctx.moveTo(deco.x, deco.y);
+            ctx.lineTo(deco.x + deco.dx, deco.y + deco.dy);
+            ctx.stroke();
+          } else if (deco.type === "bone") {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(deco.x, deco.y, 18, 4);
+          } else if (deco.type === "blood") {
+            ctx.fillStyle = "#a00";
+            ctx.globalAlpha = 0.15;
+            ctx.beginPath();
+            ctx.arc(deco.x, deco.y, deco.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          } else if (deco.type === "ghostTree") {
+            ctx.strokeStyle = "#8888cc";
+            ctx.beginPath();
+            ctx.moveTo(deco.x, deco.y);
+            ctx.lineTo(deco.x, deco.y - deco.h);
+            ctx.stroke();
+          } else if (deco.type === "fog") {
+            ctx.globalAlpha = 0.08;
+            ctx.fillStyle = "#fff";
+            ctx.beginPath();
+            ctx.arc(deco.x, deco.y, deco.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          } else if (deco.type === "pillar") {
+            ctx.fillStyle = "#d2b48c";
+            ctx.fillRect(deco.x, deco.y, 18, 60);
+            ctx.fillStyle = "#b0a080";
+            ctx.fillRect(deco.x, deco.y, 18, 10);
+          } else if (deco.type === "moss") {
+            ctx.fillStyle = "#556b2f";
+            ctx.beginPath();
+            ctx.arc(deco.x, deco.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      // Game loop
+      function gameLoop() {
+        // Background color per zone
+        let bgColor = "#1a1a2e";
+        let gridColor = "rgba(255,255,255,0.05)";
+        if (gameState.currentZone === CONSTANTS.ZONES.TOWN)
+          (bgColor = "#2c3e50"), (gridColor = "rgba(255,255,255,0.08)");
+        if (gameState.currentZone === CONSTANTS.ZONES.RAT_FIELDS)
+          (bgColor = "#2e8b57"), (gridColor = "rgba(255,255,255,0.03)");
+        if (gameState.currentZone === CONSTANTS.ZONES.BOSS_LAIR)
+          (bgColor = "#3a0a0a"), (gridColor = "rgba(255,255,255,0.03)");
+        if (
+          gameState.currentZone === CONSTANTS.ZONES.HAUNTED_WOODS ||
+          gameState.currentZone === "hauntedBoss"
+        )
+          (bgColor = "#22223b"), (gridColor = "rgba(200,200,255,0.04)");
+        if (
+          gameState.currentZone === CONSTANTS.ZONES.ANCIENT_RUINS ||
+          gameState.currentZone === "ruinsBoss"
+        )
+          (bgColor = "#b0a080"), (gridColor = "rgba(80,60,30,0.06)");
+
+        // Attack feedback shake
+        let shaking = false;
+        if (shakeTime > 0) {
+          ctx.save();
+          ctx.translate(
+            (Math.random() - 0.5) * shakeIntensity,
+            (Math.random() - 0.5) * shakeIntensity
+          );
+          shakeTime--;
+          if (shakeTime === 0) shakeIntensity = 0;
+          shaking = true;
+        }
+
+        // Background
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Decorations
+        drawZoneDecorations();
+
+        // Grid
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 40) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 40) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+
+        // Updates
+        if (!gameState.inShop && !gameState.inInventory) {
+          const p = gameState.player;
+          let dx = 0,
+            dy = 0;
+          if (gameState.keys["w"] || gameState.keys["W"]) dy -= 1;
+          if (gameState.keys["s"] || gameState.keys["S"]) dy += 1;
+          if (gameState.keys["a"] || gameState.keys["A"]) dx -= 1;
+          if (gameState.keys["d"] || gameState.keys["D"]) dx += 1;
+
+          if (dx !== 0 || dy !== 0) {
+            const len = Math.hypot(dx, dy) || 1;
+            dx /= len;
+            dy /= len;
+            p.x += dx * p.speed;
+            p.y += dy * p.speed;
+            if (Math.abs(dx) > Math.abs(dy)) {
+              p.direction = dx > 0 ? "right" : "left";
+            } else if (Math.abs(dy) > 0) {
+              p.direction = dy > 0 ? "down" : "up";
+            }
+          }
+
+          // Bounds
+          clampInBounds(p);
+
+          // Cooldown
+          if (p.attackCooldown > 0) p.attackCooldown--;
+
+          // Enemies + townsfolk
+          updateEnemies();
+          updateTownsfolk();
+
+          // Building collisions
+          checkBuildingCollisions();
+
+          // Death/Respawn
+          if (p.health <= 0) {
+            p.health = p.maxHealth;
+            gameState.currentZone = CONSTANTS.ZONES.TOWN;
+            p.x = canvas.width / 2;
+            p.y = canvas.height / 2;
+            showMessage("You died and respawned in town!");
+            initEnemies();
+            initTownsfolk();
+          }
+        }
+
+        // Draw buildings (current zone only)
+        for (const building of gameState.buildings) {
+          if (building.zone === gameState.currentZone) {
+            const sprite = sprites[building.sprite];
+            ctx.drawImage(sprite, building.x, building.y, building.width, building.height);
+
+            // Label
+            ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+            ctx.font = "14px Arial";
+            ctx.textAlign = "center";
+            let label = building.type;
+            if (building.type === "ratFields") label = "To Rat Fields";
+            if (building.type === "bossLair") label = "To Boss Lair";
+            if (building.type === "town") label = "To Town";
+            ctx.fillText(label, building.x + building.width / 2, building.y - 10);
+          }
+        }
+
+        // Draw townsfolk
+        if (gameState.currentZone === CONSTANTS.ZONES.TOWN) {
+          for (const person of gameState.townsfolk) {
+            const sprite = sprites[person.sprite];
+            ctx.drawImage(sprite, person.x, person.y, person.width, person.height);
+          }
+        }
+
+        // Draw enemies and player (if not in menus)
+        if (!gameState.inShop && !gameState.inInventory) {
+          for (const enemy of gameState.enemies) {
+            const sprite = sprites[enemy.sprite];
+            ctx.drawImage(sprite, enemy.x, enemy.y, enemy.width, enemy.height);
+
+            // Enemy health bar bg
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+            ctx.fillRect(enemy.x - 5, enemy.y - 15, enemy.width + 10, 8);
+
+            // Enemy health fill
+            const eFill = (enemy.health / enemy.maxHealth) * (enemy.width + 10);
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(enemy.x - 5, enemy.y - 15, eFill, 8);
+
+            // Name
+            ctx.fillStyle = "#fff";
+            ctx.font = "12px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(enemy.type, enemy.x + enemy.width / 2, enemy.y - 20);
+          }
+
+          // Player
+          const playerSprite = sprites.player;
+          ctx.drawImage(
+            playerSprite,
+            gameState.player.x,
+            gameState.player.y,
+            gameState.player.width,
+            gameState.player.height
+          );
+
+          // Player attack telegraph
+          const telegraphThreshold =
+            CONSTANTS.PLAYER.BASE_ATTACK_COOLDOWN / gameState.player.attackSpeed;
+          if (gameState.player.attackCooldown > telegraphThreshold * 0.7) {
+            ctx.fillStyle = "rgba(255, 255, 0, 0.3)";
+            let attackX, attackY, attackW, attackH;
+            switch (gameState.player.attackDirection) {
+              case "up":
+                attackX =
+                  gameState.player.x +
+                  gameState.player.width / 2 -
+                  CONSTANTS.PLAYER.ATTACK_WIDTH / 2;
+                attackY = gameState.player.y - CONSTANTS.PLAYER.ATTACK_RANGE;
+                attackW = CONSTANTS.PLAYER.ATTACK_WIDTH;
+                attackH = CONSTANTS.PLAYER.ATTACK_RANGE;
+                break;
+              case "down":
+                attackX =
+                  gameState.player.x +
+                  gameState.player.width / 2 -
+                  CONSTANTS.PLAYER.ATTACK_WIDTH / 2;
+                attackY = gameState.player.y + gameState.player.height;
+                attackW = CONSTANTS.PLAYER.ATTACK_WIDTH;
+                attackH = CONSTANTS.PLAYER.ATTACK_RANGE;
+                break;
+              case "left":
+                attackX = gameState.player.x - CONSTANTS.PLAYER.ATTACK_RANGE;
+                attackY =
+                  gameState.player.y +
+                  gameState.player.height / 2 -
+                  CONSTANTS.PLAYER.ATTACK_WIDTH / 2;
+                attackW = CONSTANTS.PLAYER.ATTACK_RANGE;
+                attackH = CONSTANTS.PLAYER.ATTACK_WIDTH;
+                break;
+              case "right":
+                attackX = gameState.player.x + gameState.player.width;
+                attackY =
+                  gameState.player.y +
+                  gameState.player.height / 2 -
+                  CONSTANTS.PLAYER.ATTACK_WIDTH / 2;
+                attackW = CONSTANTS.PLAYER.ATTACK_RANGE;
+                attackH = CONSTANTS.PLAYER.ATTACK_WIDTH;
+                break;
+            }
+            ctx.fillRect(attackX, attackY, attackW, attackH);
+          }
+
+          // Player health bar bg
+          ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+          ctx.fillRect(
+            gameState.player.x - 5,
+            gameState.player.y - 15,
+            gameState.player.width + 10,
+            8
+          );
+
+          // Player health fill (fixed to use bar width)
+          const pBarWidth = gameState.player.width + 10;
+          const pFill = Math.max(
+            0,
+            (gameState.player.health / gameState.player.maxHealth) * pBarWidth
+          );
+          ctx.fillStyle = "#00ff00";
+          ctx.fillRect(gameState.player.x - 5, gameState.player.y - 15, pFill, 8);
+
+          // Player name
+          ctx.fillStyle = "#fff";
+          ctx.font = "12px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText(
+            "Adventurer",
+            gameState.player.x + gameState.player.width / 2,
+            gameState.player.y - 20
+          );
+        }
+
+        // Zone label
+        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+        ctx.font = "20px Arial";
+        ctx.textAlign = "left";
+        let zoneName = gameState.currentZone;
+        if (zoneName === CONSTANTS.ZONES.RAT_FIELDS) zoneName = "Rat Fields";
+        if (zoneName === CONSTANTS.ZONES.BOSS_LAIR) zoneName = "Boss Lair";
+        if (zoneName === CONSTANTS.ZONES.HAUNTED_WOODS) zoneName = "Haunted Woods";
+        if (zoneName === CONSTANTS.ZONES.ANCIENT_RUINS) zoneName = "Ancient Ruins";
+        if (zoneName === "hauntedBoss") zoneName = "Haunted Spirit";
+        if (zoneName === "ruinsBoss") zoneName = "Ancient Golem";
+        if (zoneName === "guardBoss") zoneName = "Town Guard";
+        ctx.fillText(`${zoneName}`, 10, 30);
+
+        // Hit flash overlay (draw AFTER scene)
+        if (hitFlash > 0) {
+          ctx.save();
+          ctx.globalAlpha = 0.2;
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.restore();
+          hitFlash--;
+        }
+
+        // Restore from shake
+        if (shaking) ctx.restore();
+
+        updateTempBuffs();
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Init + start
+      initBuildings();
+      initTownsfolk();
+      initEnemies();
+      updatePlayerStats();
+      updateUI();
+      requestAnimationFrame(gameLoop);
+    </script>
+  </body>
+</html>
