@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Card Battle RPG — Enhanced</title>
+  <style>
+    :root {
+      --player-color: #4cc9f0;
+      --enemy-color: #f72585;
+      --system-color: #f8bb22;
+      --shop-color: #9c27b0;
+      --card-background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+      --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      --card-radius: 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #1a1a2e;
+      color: #e6e6e6;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .game-container {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      gap: 20px;
+    }
+
+    .main-game-area {
+      flex: 3;
+      background-color: #16213e;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .log-area {
+      flex: 1;
+      background-color: #16213e;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--system-color);
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .battle-area {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      gap: 30px;
+      flex-grow: 1;
+    }
+
+    .player-area, .enemy-area {
+      width: 48%;
+      padding: 20px;
+      border-radius: var(--card-radius);
+      background-color: rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .player-area {
+      border: 3px solid var(--player-color);
+      box-shadow: 0 0 15px rgba(76, 201, 240, 0.3);
+    }
+
+    .enemy-area {
+      border: 3px solid var(--enemy-color);
+      box-shadow: 0 0 15px rgba(247, 37, 133, 0.3);
+    }
+
+    .character-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .character-name {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .character-hp {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .health-container {
+      margin-bottom: 15px;
+      position: relative;
+    }
+
+    .health-bar {
+      height: 25px;
+      background-color: #333;
+      border-radius: 12px;
+      margin-bottom: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .health-fill {
+      height: 100%;
+      border-radius: 12px;
+      transition: width 0.3s ease-out;
+    }
+
+    .player-health .health-fill { background-color: var(--player-color); }
+    .enemy-health .health-fill  { background-color: var(--enemy-color); }
+
+    .shield-indicator {
+      position: absolute;
+      right: 5px;
+      top: 50%;
+      transform: translateY(-50%);
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+
+    .poison-indicator {
+      position: absolute;
+      left: 5px;
+      top: 50%;
+      transform: translateY(-50%);
+      background-color: rgba(106, 27, 154, 0.5);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+
+    .player-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    .stat-item {
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 8px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-value { font-weight: bold; font-size: 1.1rem; }
+
+    .enemy-intent {
+      margin-top: auto;
+      padding: 10px;
+      background-color: rgba(247, 37, 133, 0.1);
+      border-radius: 8px;
+      border-left: 4px solid var(--enemy-color);
+    }
+
+    .intent-title { font-weight: bold; margin-bottom: 5px; color: var(--enemy-color); }
+    .intent-description { font-size: 0.9rem; }
+
+    .cards-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 20px;
+      justify-content: center;
+      min-height: 220px;
+    }
+
+    .card {
+      width: 140px;
+      height: 200px;
+      background: var(--card-background);
+      border-radius: var(--card-radius);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: #333;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: var(--card-shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+    .card.selected { transform: translateY(-15px); box-shadow: 0 0 25px gold; }
+
+    .card-cost {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 25px;
+      height: 25px;
+      background-color: var(--system-color);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; color: #111;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .card-name {
+      font-size: 1rem;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px 5px 5px;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+      background-color: rgba(0,0,0,0.05);
+    }
+
+    .card-image {
+      height: 80px;
+      background-color: rgba(0,0,0,0.1);
+      margin: 5px 10px; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.5rem; color: rgba(0,0,0,0.3);
+    }
+
+    .card-effect { font-size: 1.8rem; text-align: center; margin: 5px 0; color: #111; }
+    .card-description { font-size: 0.9rem; text-align: center; padding: 5px 10px; margin-bottom: 10px; color: #555; font-weight: normal; }
+
+    .card-type {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 3px; text-align: center; font-size: 0.7rem; font-weight: bold; text-transform: uppercase;
+      background-color: rgba(0,0,0,0.1);
+    }
+    .attack-type  { background-color: rgba(247, 37, 133, 0.2); color: #d90429; }
+    .defense-type { background-color: rgba(76, 201, 240, 0.2); color: #0096c7; }
+    .healing-type { background-color: rgba(46, 204, 113, 0.2); color: #27ae60; }
+    .status-type  { background-color: rgba(156, 39, 176, 0.2); color: #7b1fa2; }
+
+    .controls { display: flex; justify-content: center; margin-top: 30px; gap: 20px; }
+    button { padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s; font-size: 1rem; min-width: 150px; }
+
+    #end-turn-btn { background-color: var(--system-color); color: #111; }
+    #end-turn-btn:hover { background-color: #e6b800; transform: translateY(-2px); }
+    #end-turn-btn:disabled { background-color: #555; color: #999; cursor: not-allowed; transform: none; }
+
+    #new-game-btn { background-color: #6c757d; color: white; }
+    #new-game-btn:hover { background-color: #5a6268; transform: translateY(-2px); }
+
+    .log {
+      flex-grow: 1; overflow-y: auto; padding: 15px; background-color: rgba(0,0,0,0.3);
+      border-radius: 10px; display: flex; flex-direction: column; gap: 8px; height: 400px; max-height: 400px;
+    }
+
+    .log-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: var(--system-color); text-align: center; }
+
+    .log-entry { padding: 8px 12px; border-radius: 6px; font-size: 0.95rem; animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px);} to { opacity: 1; transform: translateY(0);} }
+
+    .player-entry { background-color: rgba(76,201,240,0.15); border-left: 4px solid var(--player-color); color: var(--player-color); }
+    .enemy-entry  { background-color: rgba(247,37,133,0.15); border-left: 4px solid var(--enemy-color);  color: var(--enemy-color); }
+    .system-entry { background-color: rgba(248,187,34,0.15); border-left: 4px solid var(--system-color);  color: var(--system-color); }
+    .shop-entry   { background-color: rgba(156,39,176,0.15); border-left: 4px solid var(--shop-color);   color: var(--shop-color); }
+
+    .enemy-sprite, .player-sprite { font-size: 5rem; text-align: center; margin: 15px 0; }
+    .enemy-defeated { animation: enemyDefeated 0.5s ease-out forwards; }
+    @keyframes enemyDefeated { 0% { transform: translateY(0) rotate(0); opacity: 1;} 100% { transform: translateY(50px) rotate(-10deg); opacity: 0;} }
+
+    .player-damaged { animation: playerDamaged 0.3s ease-out; }
+    @keyframes playerDamaged { 0% { transform: translateX(0);} 25% { transform: translateX(-10px);} 50% { transform: translateX(10px);} 75% { transform: translateX(-5px);} 100% { transform: translateX(0);} }
+
+    .enemy-damaged { animation: enemyDamaged 0.3s ease-out; }
+    @keyframes enemyDamaged { 0% { transform: translateX(0);} 25% { transform: translateX(10px);} 50% { transform: translateX(-10px);} 75% { transform: translateX(5px);} 100% { transform: translateX(0);} }
+
+    .card-used { animation: cardUsed 0.5s ease-out forwards; }
+    @keyframes cardUsed { 0% { transform: translateY(0) scale(1); opacity: 1;} 100% { transform: translateY(-50px) scale(0.8); opacity: 0;} }
+
+    .victory-screen, .shop-screen {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      z-index: 100; color: white; font-size: 2rem; text-align: center; animation: fadeIn 0.5s ease-out;
+    }
+
+    .victory-screen h2 { color: var(--system-color); font-size: 3rem; margin-bottom: 20px; }
+    .victory-screen button { margin-top: 30px; font-size: 1.2rem; padding: 15px 30px; }
+
+    .shop-screen h2 { color: var(--shop-color); font-size: 3rem; margin-bottom: 20px; }
+    .shop-items { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; max-width: 800px; margin: 20px 0; }
+
+    .shop-card {
+      width: 160px; height: 220px; background: var(--card-background); border-radius: var(--card-radius);
+      display: flex; flex-direction: column; justify-content: space-between; color: #333; font-weight: bold; box-shadow: var(--card-shadow);
+      position: relative; overflow: hidden;
+    }
+
+    .shop-card-cost {
+      position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; background-color: var(--shop-color);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .shop-card button { background-color: var(--shop-color); color: white; border: none; padding: 8px; font-size: 0.9rem; cursor: pointer; transition: background-color 0.3s; }
+    .shop-card button:hover { background-color: #7b1fa2; }
+    .shop-card button:disabled { background-color: #555; cursor: not-allowed; }
+
+    .hidden { display: none; }
+
+    .card-details {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.8); color: white; padding: 15px; border-radius: 10px; max-width: 80%;
+      text-align: center; z-index: 10; display: none;
+    }
+
+    .turn-indicator {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background-color: rgba(0,0,0,0.8); color: white; padding: 20px 40px; border-radius: 10px; font-size: 2rem; z-index: 20; display: none;
+    }
+
+    .gold-display {
+      position: absolute; top: 20px; right: 20px; background-color: rgba(248, 187, 34, 0.2); padding: 8px 15px; border-radius: 20px; font-weight: bold;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .gold-icon { color: gold; }
+
+    .action-explanation { font-style: italic; color: #aaa; margin-top: 5px; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="gold-display">
+    <span class="gold-icon">💰</span>
+    <span id="gold-amount">100</span>
+  </div>
+
+  <div class="game-container">
+    <div class="main-game-area">
+      <h1>Card Battle RPG</h1>
+
+      <div class="battle-area">
+        <div class="enemy-area" id="enemy-area">
+          <div class="character-header">
+            <h2 class="character-name" id="enemy-name">Goblin</h2>
+            <div class="character-hp" id="enemy-hp">30/30</div>
+          </div>
+
+          <div class="enemy-sprite" id="enemy-sprite">👹</div>
+
+          <div class="health-container">
+            <div class="health-bar enemy-health">
+              <div class="health-fill" id="enemy-health-bar" style="width: 100%"></div>
+              <div class="shield-indicator" id="enemy-shield">0</div>
+              <div class="poison-indicator" id="enemy-poison" style="display: none;">☠️ 0</div>
+            </div>
+          </div>
+
+          <div class="enemy-intent">
+            <div class="intent-title">Next Action</div>
+            <div class="intent-description" id="enemy-intent">Preparing attack...</div>
+            <div class="action-explanation" id="action-explanation"></div>
+          </div>
+        </div>
+
+        <div class="player-area" id="player-area">
+          <div class="character-header">
+            <h2 class="character-name">Hero</h2>
+            <div class="character-hp" id="player-hp">50/50</div>
+          </div>
+
+          <div class="player-sprite">🧙‍♂️</div>
+
+          <div class="health-container">
+            <div class="health-bar player-health">
+              <div class="health-fill" id="player-health-bar" style="width: 100%"></div>
+              <div class="shield-indicator" id="player-shield">0</div>
+              <div class="poison-indicator" id="player-poison" style="display: none;">☠️ 0</div>
+            </div>
+          </div>
+
+          <div class="player-stats">
+            <div class="stat-item">
+              <div>Energy</div>
+              <div class="stat-value" id="player-energy">3/3</div>
+            </div>
+            <div class="stat-item">
+              <div>Deck</div>
+              <div class="stat-value" id="deck-count">10</div>
+            </div>
+            <div class="stat-item">
+              <div>Turn</div>
+              <div class="stat-value" id="turn-count">1</div>
+            </div>
+            <div class="stat-item">
+              <div>Enemies</div>
+              <div class="stat-value" id="enemies-defeated">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Your Hand</h3>
+      <div class="cards-container" id="hand-container"></div>
+
+      <div class="controls">
+        <button id="end-turn-btn">End Turn</button>
+        <button id="new-game-btn">New Game</button>
+      </div>
+    </div>
+
+    <div class="log-area">
+      <div class="log-title">Battle Log</div>
+      <div class="log" id="battle-log">
+        <div class="log-entry system-entry">Battle started! Defeat enemies to win!</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-details" id="card-details"></div>
+  <div class="turn-indicator" id="turn-indicator">Enemy Turn</div>
+
+  <div id="victory-screen" class="victory-screen hidden">
+    <h2>Victory!</h2>
+    <p>You defeated all enemies!</p>
+    <p>Turns taken: <span id="final-turns">0</span></p>
+    <p>Enemies defeated: <span id="final-enemies">0</span></p>
+    <p>Gold earned: <span id="final-gold">0</span></p>
+    <button id="play-again-btn">Play Again</button>
+  </div>
+
+  <div id="shop-screen" class="shop-screen hidden">
+    <h2>Card Shop</h2>
+    <p>Gold: <span id="shop-gold">100</span></p>
+    <div class="shop-items" id="shop-items"></div>
+    <button id="exit-shop-btn">Continue to Next Enemy</button>
+  </div>
+
+  <script>
+    // Game state
+    const gameState = {
+      player: {
+        maxHp: 50,
+        hp: 50,
+        maxEnergy: 3,
+        energy: 3,
+        block: 0,
+        poison: 0,
+        deck: [],
+        hand: [],
+        discard: [],
+        artifacts: [],
+        gold: 100,
+        unlockedCards: []
+      },
+      enemy: {
+        name: "Goblin",
+        type: "goblin",
+        maxHp: 30,
+        hp: 30,
+        block: 0,
+        poison: 0,
+        nextAction: null,
+        nextActionDamage: 0,
+        nextActionBlock: 0,
+        nextActionPoison: 0,
+        sprite: "👹"
+      },
+      turn: 1,
+      enemiesDefeated: 0,
+      selectedCard: null,
+      enemies: [
+        { name: "Goblin", type: "goblin", maxHp: 30, sprite: "👹", goldReward: 20 },
+        { name: "Skeleton Archer", type: "skeleton", maxHp: 35, sprite: "🏹", goldReward: 30 },
+        { name: "Orc Warrior", type: "orc", maxHp: 45, sprite: "🪓", goldReward: 40 },
+        { name: "Dark Mage", type: "mage", maxHp: 40, sprite: "🧙‍♂️", goldReward: 50 },
+        { name: "Dragon", type: "dragon", maxHp: 60, sprite: "🐉", goldReward: 100 }
+      ],
+      inCombat: true
+    };
+
+    // Card definitions
+    const baseCards = [
+      { id: 1, name: "Strike", cost: 1, effect: 6, description: "Deal 6 damage to the enemy", type: "attack", symbol: "⚔️", unlocked: true },
+      { id: 2, name: "Defend", cost: 1, effect: 5, description: "Gain 5 block (reduces incoming damage)", type: "defense", symbol: "🛡️", unlocked: true },
+      { id: 3, name: "Fireball", cost: 2, effect: 12, description: "Deal 12 damage to the enemy", type: "attack", symbol: "🔥", unlocked: true },
+      { id: 4, name: "Heal", cost: 1, effect: 4, description: "Restore 4 health", type: "healing", symbol: "❤️", unlocked: true },
+      { id: 5, name: "Double Strike", cost: 2, effect: 8, description: "Deal 8 damage twice to the enemy", type: "attack", symbol: "⚔️⚔️", unlocked: true }
+    ];
+
+    const unlockableCards = [
+      { id: 6, name: "Poison Dart", cost: 1, effect: 3, description: "Deal 3 damage and apply 1 poison", type: "attack", symbol: "☠️", unlocked: false, shopCost: 50 },
+      { id: 7, name: "Bash", cost: 2, effect: 9, description: "Deal 9 damage to the enemy", type: "attack", symbol: "💥", unlocked: false, shopCost: 40 },
+      { id: 9, name: "Block", cost: 1, effect: 7, description: "Gain 7 block (reduces incoming damage)", type: "defense", symbol: "🛡️", unlocked: false, shopCost: 35 },
+      { id: 10, name: "Power Strike", cost: 3, effect: 15, description: "Deal 15 damage to the enemy", type: "attack", symbol: "💫", unlocked: false, shopCost: 60 },
+      { id: 11, name: "Magic Barrier", cost: 2, effect: 10, description: "Gain 10 block (reduces incoming damage)", type: "defense", symbol: "🔮", unlocked: false, shopCost: 45 },
+      { id: 12, name: "Toxic Cloud", cost: 2, effect: 3, description: "Apply 3 poison to the enemy", type: "status", symbol: "☁️", unlocked: false, shopCost: 55 },
+      { id: 13, name: "Leeching Strike", cost: 2, effect: 5, description: "Deal 5 damage and heal for 3", type: "attack", symbol: "🩸", unlocked: false, shopCost: 50 }
+    ];
+
+    const enemyActions = {
+      goblin: [
+        { name: "Attack", damage: 5, description: "The goblin swings its club!", explanation: "(This will deal 5 damage to you)" },
+        { name: "Double Attack", damage: 3, description: "The goblin attacks twice!", explanation: "(This will deal 3 damage twice for 6 total)" },
+        { name: "Defend", damage: 0, description: "The goblin raises its shield.", block: 4, explanation: "(This will give the goblin 4 block)" }
+      ],
+      skeleton: [
+        { name: "Arrow Shot", damage: 7, description: "The skeleton fires an arrow!", explanation: "(This will deal 7 damage to you)" },
+        { name: "Poison Arrow", damage: 4, description: "The skeleton shoots a poisoned arrow!", poison: 1, explanation: "(This will deal 4 damage and poison you for 1 turn)" },
+        { name: "Dodge", damage: 0, description: "The skeleton prepares to dodge.", block: 5, explanation: "(This will give the skeleton 5 block)" }
+      ],
+      orc: [
+        { name: "Brutal Strike", damage: 10, description: "The orc delivers a powerful blow!", explanation: "(This will deal 10 damage to you)" },
+        { name: "War Cry", damage: 0, description: "The orc roars intimidatingly.", block: 6, explanation: "(This will give the orc 6 block)" },
+        { name: "Charge", damage: 8, description: "The orc charges at you!", explanation: "(This will deal 8 damage to you)" }
+      ],
+      mage: [
+        { name: "Fire Blast", damage: 12, description: "The mage casts a fire spell!", explanation: "(This will deal 12 damage to you)" },
+        { name: "Dark Pact", damage: -6, description: "The mage heals itself!", explanation: "(This will heal the mage for 6 HP)" },
+        { name: "Magic Shield", damage: 0, description: "The mage creates a magical barrier.", block: 8, explanation: "(This will give the mage 8 block)" }
+      ],
+      dragon: [
+        { name: "Fire Breath", damage: 15, description: "The dragon breathes fire!", explanation: "(This will deal 15 damage to you)" },
+        { name: "Tail Whip", damage: 10, description: "The dragon whips its tail!", explanation: "(This will deal 10 damage to you)" },
+        { name: "Scale Armor", damage: 0, description: "The dragon's scales harden.", block: 12, explanation: "(This will give the dragon 12 block)" }
+      ]
+    };
+
+    // Initialize the game
+    function initGame() {
+      gameState.player.hp = gameState.player.maxHp;
+      gameState.player.energy = gameState.player.maxEnergy;
+      gameState.player.block = 0;
+      gameState.player.poison = 0;
+      gameState.player.deck = [...baseCards];
+
+      // Add unlocked cards to deck
+      unlockableCards.forEach(card => { if (card.unlocked) gameState.player.deck.push({ ...card }); });
+
+      gameState.player.hand = [];
+      gameState.player.discard = [];
+      gameState.player.artifacts = [];
+      gameState.player.gold = 100;
+
+      gameState.turn = 1;
+      gameState.enemiesDefeated = 0;
+      gameState.selectedCard = null;
+      gameState.inCombat = true;
+
+      setupNextEnemy();
+      drawCards(5);
+      updateUI();
+      addLogEntry(`A wild ${gameState.enemy.name} appears!`, "system");
+    }
+
+    function setupNextEnemy() {
+      const enemyIndex = gameState.enemiesDefeated % gameState.enemies.length;
+      const enemyTemplate = gameState.enemies[enemyIndex];
+
+      gameState.enemy.name = enemyTemplate.name;
+      gameState.enemy.type = enemyTemplate.type;
+      gameState.enemy.maxHp = enemyTemplate.maxHp;
+      gameState.enemy.hp = enemyTemplate.maxHp;
+      gameState.enemy.block = 0;
+      gameState.enemy.poison = 0;
+      gameState.enemy.sprite = enemyTemplate.sprite;
+
+      setEnemyIntent();
+      updatePoisonIndicator();
+      gameState.inCombat = true;
+    }
+
+    function shuffleDeck() {
+      for (let i = gameState.player.deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [gameState.player.deck[i], gameState.player.deck[j]] = [gameState.player.deck[j], gameState.player.deck[i]];
+      }
+    }
+
+    function drawCards(count) {
+      for (let i = 0; i < count; i++) {
+        if (gameState.player.deck.length === 0) {
+          if (gameState.player.discard.length === 0) break;
+          gameState.player.deck = [...gameState.player.discard];
+          gameState.player.discard = [];
+          shuffleDeck();
+          addLogEntry("Your deck was reshuffled!", "system");
+        }
+        const card = gameState.player.deck.pop();
+        gameState.player.hand.push(card);
+      }
+    }
+
+    function setEnemyIntent() {
+      const actions = enemyActions[gameState.enemy.type];
+      const action = actions[Math.floor(Math.random() * actions.length)];
+
+      gameState.enemy.nextAction = action.name;
+      gameState.enemy.nextActionDamage = action.damage || 0;
+      gameState.enemy.nextActionBlock = action.block || 0;
+      gameState.enemy.nextActionPoison = action.poison || 0;
+
+      document.getElementById("enemy-intent").textContent = action.description;
+      document.getElementById("action-explanation").textContent = action.explanation || "";
+    }
+
+    function updatePoisonIndicator() {
+      const playerPoison = document.getElementById("player-poison");
+      const enemyPoison = document.getElementById("enemy-poison");
+
+      if (gameState.player.poison > 0) {
+        playerPoison.textContent = `☠️ ${gameState.player.poison}`;
+        playerPoison.style.display = "block";
+      } else {
+        playerPoison.style.display = "none";
+      }
+
+      if (gameState.enemy.poison > 0) {
+        enemyPoison.textContent = `☠️ ${gameState.enemy.poison}`;
+        enemyPoison.style.display = "block";
+      } else {
+        enemyPoison.style.display = "none";
+      }
+    }
+
+    function updateUI() {
+      document.getElementById("player-hp").textContent = `${gameState.player.hp}/${gameState.player.maxHp}`;
+      document.getElementById("player-energy").textContent = `${gameState.player.energy}/${gameState.player.maxEnergy}`;
+      document.getElementById("deck-count").textContent = gameState.player.deck.length + gameState.player.discard.length;
+      document.getElementById("turn-count").textContent = gameState.turn;
+      document.getElementById("enemies-defeated").textContent = gameState.enemiesDefeated;
+      document.getElementById("gold-amount").textContent = gameState.player.gold;
+
+      const playerHealthPercent = (gameState.player.hp / gameState.player.maxHp) * 100;
+      document.getElementById("player-health-bar").style.width = `${playerHealthPercent}%`;
+
+      const enemyHealthPercent = (gameState.enemy.hp / gameState.enemy.maxHp) * 100;
+      document.getElementById("enemy-health-bar").style.width = `${enemyHealthPercent}%`;
+
+      document.getElementById("player-shield").textContent = gameState.player.block;
+      document.getElementById("enemy-shield").textContent = gameState.enemy.block;
+
+      document.getElementById("enemy-name").textContent = gameState.enemy.name;
+      document.getElementById("enemy-hp").textContent = `${gameState.enemy.hp}/${gameState.enemy.maxHp}`;
+      document.getElementById("enemy-sprite").textContent = gameState.enemy.sprite;
+
+      updatePoisonIndicator();
+
+      const handContainer = document.getElementById("hand-container");
+      handContainer.innerHTML = "";
+
+      gameState.player.hand.forEach((card, index) => {
+        const cardElement = document.createElement("div");
+        cardElement.className = "card";
+        if (gameState.selectedCard === index) cardElement.classList.add("selected");
+
+        let typeClass = "";
+        if (card.type === "attack") typeClass = "attack-type";
+        else if (card.type === "defense") typeClass = "defense-type";
+        else if (card.type === "healing") typeClass = "healing-type";
+        else if (card.type === "status") typeClass = "status-type";
+
+        cardElement.innerHTML = `
+          <div class="card-cost">${card.cost}</div>
+          <div class="card-name">${card.name}</div>
+          <div class="card-image">${card.symbol}</div>
+          <div class="card-effect">${card.effect}</div>
+          <div class="card-description">${card.description}</div>
+          <div class="card-type ${typeClass}">${card.type}</div>
+        `;
+
+        cardElement.addEventListener("click", () => selectCard(index));
+        cardElement.addEventListener("mouseenter", () => showCardDetails(card));
+        cardElement.addEventListener("mouseleave", hideCardDetails);
+        handContainer.appendChild(cardElement);
+      });
+
+      // End turn enabled only during combat
+      document.getElementById("end-turn-btn").disabled = !gameState.inCombat;
+    }
+
+    function showCardDetails(card) {
+      const details = document.getElementById("card-details");
+      details.textContent = `${card.name}: ${card.description}`;
+      details.style.display = "block";
+    }
+
+    function hideCardDetails() {
+      document.getElementById("card-details").style.display = "none";
+    }
+
+    function selectCard(index) {
+      if (gameState.selectedCard === index) {
+        playSelectedCard();
+      } else {
+        gameState.selectedCard = index;
+        updateUI();
+        const card = gameState.player.hand[index];
+        const details = document.getElementById("card-details");
+        details.textContent = `${card.name}: ${card.description}`;
+        details.style.display = "block";
+      }
+    }
+
+    function playSelectedCard() {
+      if (gameState.selectedCard === null) return;
+      const card = gameState.player.hand[gameState.selectedCard];
+      const cardElement = document.querySelectorAll(".card")[gameState.selectedCard];
+
+      if (gameState.player.energy < card.cost) {
+        addLogEntry(`Not enough energy to play ${card.name}!`, "system");
+        return;
+      }
+
+      gameState.player.energy -= card.cost;
+      hideCardDetails();
+      if (cardElement) cardElement.classList.add("card-used");
+
+      setTimeout(() => {
+        applyCardEffect(card);
+        gameState.player.hand.splice(gameState.selectedCard, 1);
+        gameState.player.discard.push(card);
+        gameState.selectedCard = null;
+        updateUI();
+      }, 500);
+    }
+
+    function applyCardEffect(card) {
+      let effectText = "";
+
+      if (card.type === "attack") {
+        let damage = card.effect;
+
+        if (gameState.enemy.block > 0) {
+          const blocked = Math.min(damage, gameState.enemy.block);
+          damage -= blocked;
+          gameState.enemy.block -= blocked;
+          effectText = `The ${gameState.enemy.name} blocked ${blocked} damage! `;
+        }
+
+        if (damage > 0) {
+          if (card.name === "Double Strike") {
+            let firstHit = damage;
+            let secondHit = damage;
+
+            if (gameState.enemy.block > 0) {
+              const blockedFirst = Math.min(firstHit, gameState.enemy.block);
+              firstHit -= blockedFirst;
+              gameState.enemy.block -= blockedFirst;
+              effectText += `First hit blocked ${blockedFirst}! `;
+
+              if (gameState.enemy.block > 0) {
+                const blockedSecond = Math.min(secondHit, gameState.enemy.block);
+                secondHit -= blockedSecond;
+                gameState.enemy.block -= blockedSecond;
+                effectText += `Second hit blocked ${blockedSecond}! `;
+              }
+            }
+
+            const totalDamage = firstHit + secondHit;
+            if (totalDamage > 0) {
+              gameState.enemy.hp -= totalDamage;
+              effectText += `You hit the ${gameState.enemy.name} for ${firstHit} and ${secondHit} damage!`;
+            }
+          } else {
+            gameState.enemy.hp -= damage;
+            effectText += `You hit the ${gameState.enemy.name} for ${damage} damage!`;
+          }
+
+          if (card.name === "Poison Dart") {
+            gameState.enemy.poison += 1;
+            effectText += ` The ${gameState.enemy.name} was poisoned!`;
+            updatePoisonIndicator();
+          }
+
+          if (card.name === "Leeching Strike") {
+            const healAmount = 3;
+            gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + healAmount);
+            effectText += ` You healed for ${healAmount} HP!`;
+          }
+
+          const es = document.getElementById("enemy-sprite");
+          es.classList.add("enemy-damaged");
+          setTimeout(() => es.classList.remove("enemy-damaged"), 300);
+        }
+
+        if (gameState.enemy.hp <= 0) {
+          gameState.enemy.hp = 0;
+          effectText += ` The ${gameState.enemy.name} is defeated!`;
+          addLogEntry(effectText, "player");
+
+          const ea = document.getElementById("enemy-area");
+          ea.classList.add("enemy-defeated");
+          setTimeout(() => enemyDefeated(), 500);
+          return;
+        }
+      } else if (card.type === "defense") {
+        gameState.player.block += card.effect;
+        effectText = `You gained ${card.effect} block!`;
+      } else if (card.type === "healing") {
+        const healAmount = Math.min(card.effect, gameState.player.maxHp - gameState.player.hp);
+        gameState.player.hp += healAmount;
+        effectText = `You healed for ${healAmount} HP!`;
+      } else if (card.type === "status") {
+        if (card.name === "Toxic Cloud") {
+          gameState.enemy.poison += card.effect;
+          effectText = `You poisoned the ${gameState.enemy.name} for ${card.effect} turns!`;
+          updatePoisonIndicator();
+        }
+      }
+
+      addLogEntry(effectText, "player");
+    }
+
+    function applyPoisonDamage() {
+      if (gameState.enemy.poison > 0) {
+        const poisonDamage = gameState.enemy.poison;
+        gameState.enemy.hp -= poisonDamage;
+        gameState.enemy.poison -= 1;
+        addLogEntry(`The ${gameState.enemy.name} took ${poisonDamage} poison damage!`, "system");
+
+        if (gameState.enemy.hp <= 0) {
+          gameState.enemy.hp = 0;
+          addLogEntry(`The ${gameState.enemy.name} is defeated!`, "player");
+          const ea = document.getElementById("enemy-area");
+          ea.classList.add("enemy-defeated");
+          setTimeout(() => enemyDefeated(), 500);
+          return;
+        }
+      }
+
+      if (gameState.player.poison > 0) {
+        const poisonDamage = gameState.player.poison;
+        gameState.player.hp -= poisonDamage;
+        gameState.player.poison -= 1;
+        addLogEntry(`You took ${poisonDamage} poison damage!`, "enemy");
+
+        if (gameState.player.hp <= 0) {
+          gameState.player.hp = 0;
+          playerDefeated();
+          return;
+        }
+      }
+
+      updatePoisonIndicator();
+    }
+
+    // Enemy defeated — fixed ids and flow
+    function enemyDefeated() {
+      const enemyReward = gameState.enemies.find(e => e.name === gameState.enemy.name).goldReward;
+      gameState.player.gold += enemyReward;
+      gameState.enemiesDefeated++;
+      addLogEntry(`You defeated the ${gameState.enemy.name} and earned ${enemyReward} gold!`, "system");
+
+      if (gameState.enemiesDefeated >= gameState.enemies.length) {
+        showVictoryScreen();
+        return;
+      }
+
+      const healAmount = Math.floor(gameState.player.maxHp * 0.25);
+      gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + healAmount);
+      addLogEntry(`You recovered ${healAmount} HP from victory!`, "system");
+
+      gameState.inCombat = false;
+      updateUI();
+
+      document.getElementById("enemy-area").classList.remove("enemy-defeated");
+
+      setTimeout(() => showShopScreen(), 800);
+    }
+
+    function exitShop() {
+      document.getElementById("shop-screen").classList.add("hidden");
+      setupNextEnemy();
+      startNewTurn();
+    }
+
+    function playerDefeated() {
+      addLogEntry("You have been defeated!", "system");
+      document.getElementById("end-turn-btn").disabled = true;
+
+      setTimeout(() => {
+        alert("Game Over! You were defeated.");
+        initGame();
+      }, 800);
+    }
+
+    function showVictoryScreen() {
+      document.getElementById("final-turns").textContent = gameState.turn;
+      document.getElementById("final-enemies").textContent = gameState.enemiesDefeated;
+      document.getElementById("final-gold").textContent = gameState.player.gold;
+      document.getElementById("victory-screen").classList.remove("hidden");
+    }
+
+    function showShopScreen() {
+      document.getElementById("shop-gold").textContent = gameState.player.gold;
+      const shopContainer = document.getElementById("shop-items");
+      shopContainer.innerHTML = "";
+
+      const available = unlockableCards.filter(c => !c.unlocked);
+      if (available.length === 0) {
+        const msg = document.createElement("div");
+        msg.style.margin = "10px 0";
+        msg.textContent = "All cards unlocked! Continue when ready.";
+        shopContainer.appendChild(msg);
+      }
+
+      unlockableCards.forEach((card, index) => {
+        if (!card.unlocked) {
+          const shopCard = document.createElement("div");
+          shopCard.className = "shop-card";
+          const typeClass = card.type === "attack" ? "attack-type" : card.type === "defense" ? "defense-type" : card.type === "healing" ? "healing-type" : "status-type";
+          shopCard.innerHTML = `
+            <div class="shop-card-cost">${card.shopCost}</div>
+            <div class="card-name">${card.name}</div>
+            <div class="card-image">${card.symbol}</div>
+            <div class="card-effect">${card.effect}</div>
+            <div class="card-description">${card.description}</div>
+            <div class="card-type ${typeClass}">${card.type}</div>
+            <button id="buy-card-${index}" ${gameState.player.gold < card.shopCost ? 'disabled' : ''}>Buy</button>
+          `;
+          shopContainer.appendChild(shopCard);
+
+          document.getElementById(`buy-card-${index}`).addEventListener("click", () => buyCard(index));
+        }
+      });
+
+      document.getElementById("shop-screen").classList.remove("hidden");
+    }
+
+    function buyCard(index) {
+      const card = unlockableCards[index];
+      if (gameState.player.gold >= card.shopCost) {
+        gameState.player.gold -= card.shopCost;
+        card.unlocked = true;
+
+        // Add purchased card to discard so it appears soon
+        gameState.player.discard.push({ ...card });
+
+        addLogEntry(`You unlocked ${card.name} and added it to your deck!`, "shop");
+        updateUI();
+        showShopScreen();
+      }
+    }
+
+    function showTurnIndicator(text) {
+      const indicator = document.getElementById("turn-indicator");
+      indicator.textContent = text;
+      indicator.style.display = "block";
+      setTimeout(() => { indicator.style.display = "none"; }, 800);
+    }
+
+    function endTurn() {
+      if (!gameState.inCombat) return;
+
+      document.getElementById("end-turn-btn").disabled = true;
+      addLogEntry(`End of turn ${gameState.turn}`, "system");
+
+      gameState.player.discard.push(...gameState.player.hand);
+      gameState.player.hand = [];
+      gameState.selectedCard = null;
+      hideCardDetails();
+      updateUI();
+
+      showTurnIndicator("Enemy Turn");
+
+      setTimeout(() => {
+        enemyTurn();
+        setTimeout(() => {
+          if (gameState.player.hp > 0 && gameState.inCombat) {
+            startNewTurn();
+          }
+        }, 800);
+      }, 800);
+    }
+
+    function enemyTurn() {
+      const damage = gameState.enemy.nextActionDamage;
+      const block = gameState.enemy.nextActionBlock || 0;
+      const poison = gameState.enemy.nextActionPoison || 0;
+
+      if (block > 0) {
+        gameState.enemy.block += block;
+        addLogEntry(`The ${gameState.enemy.name} gains ${block} block!`, "enemy");
+        updateUI();
+      }
+
+      if (poison > 0) {
+        gameState.player.poison += poison;
+        addLogEntry(`The ${gameState.enemy.name} poisoned you for ${poison} turns!`, "enemy");
+        updatePoisonIndicator();
+      }
+
+      if (damage > 0) {
+        let damageTaken = damage;
+
+        if (gameState.player.block > 0) {
+          const blocked = Math.min(damageTaken, gameState.player.block);
+          damageTaken -= blocked;
+          gameState.player.block -= blocked;
+          addLogEntry(`You blocked ${blocked} damage!`, "player");
+        }
+
+        if (damageTaken > 0) {
+          gameState.player.hp -= damageTaken;
+          if (gameState.player.hp < 0) gameState.player.hp = 0;
+          addLogEntry(`The ${gameState.enemy.name} hits you for ${damageTaken} damage!`, "enemy");
+
+          const pa = document.getElementById("player-area");
+          pa.classList.add("player-damaged");
+          setTimeout(() => { pa.classList.remove("player-damaged"); updateUI(); }, 300);
+        }
+
+        if (gameState.player.hp <= 0) {
+          gameState.player.hp = 0;
+          updateUI();
+          playerDefeated();
+          return;
+        }
+      } else if (damage < 0) {
+        const healAmount = -damage;
+        gameState.enemy.hp = Math.min(gameState.enemy.maxHp, gameState.enemy.hp + healAmount);
+        addLogEntry(`The ${gameState.enemy.name} heals for ${healAmount} HP!`, "enemy");
+        updateUI();
+      }
+
+      updateUI();
+    }
+
+    function startNewTurn() {
+      gameState.turn++;
+
+      applyPoisonDamage();
+      if (gameState.player.hp <= 0 || gameState.enemy.hp <= 0) return;
+
+      showTurnIndicator("Your Turn");
+
+      gameState.player.energy = gameState.player.maxEnergy;
+
+      if (gameState.player.block > 0) {
+        const lostBlock = Math.floor(gameState.player.block * 0.5);
+        gameState.player.block -= lostBlock;
+        if (lostBlock > 0) addLogEntry(`You lost ${lostBlock} block at the start of the turn!`, "system");
+      }
+
+      drawCards(5);
+      setEnemyIntent();
+      updateUI();
+      addLogEntry(`Turn ${gameState.turn} begins`, "system");
+    }
+
+    function addLogEntry(text, type) {
+      const log = document.getElementById("battle-log");
+      const entry = document.createElement("div");
+      entry.className = `log-entry ${type}-entry`;
+      entry.textContent = text;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // Event listeners
+    document.getElementById("end-turn-btn").addEventListener("click", endTurn);
+    document.getElementById("new-game-btn").addEventListener("click", initGame);
+    document.getElementById("play-again-btn").addEventListener("click", () => {
+      document.getElementById("victory-screen").classList.add("hidden");
+      initGame();
+    });
+    // Only one handler for exit shop (remove duplicate)
+    document.getElementById("exit-shop-btn").addEventListener("click", exitShop);
+
+    // Start
+    initGame();
+  </script>
+</body>
+</html>
