@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Metropolis Builder (Enhanced)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #3f37c9;
+      --success: #4cc9f0;
+      --danger: #f72585;
+      --warning: #f8961e;
+      --info: #4895ef;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --white: #ffffff;
+      --residential: #ffd166;
+      --commercial: #06d6a0;
+      --industrial: #ef476f;
+      --road: #495057;
+      --park: #52b788;
+      --school: #7209b7;
+      --hospital: #f72585;
+      --police: #4361ee;
+      --fire: #f8961e;
+      --power: #ff9e00;
+      --water: #4cc9f0;
+      --landmark: #b5179e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f1f3f5;
+      color: var(--dark);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    #game-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+    #game-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; padding: 15px 20px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    #game-title { font-size: 28px; font-weight: 700; margin: 0; text-shadow: 1px 1px 3px rgba(0,0,0,0.2); }
+
+    #resources {
+      display: flex; gap: 20px; background-color: rgba(255,255,255,0.2);
+      padding: 10px 15px; border-radius: 8px; backdrop-filter: blur(5px);
+    }
+    .resource { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+    .resource-icon { font-size: 18px; }
+
+    #game-area { display: flex; gap: 20px; }
+
+    #building-panel {
+      display: flex; flex-direction: column; gap: 15px; width: 250px;
+      background-color: var(--white); padding: 15px; border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: fit-content;
+    }
+    .building-category { display: flex; flex-direction: column; gap: 8px; }
+    .category-title {
+      font-weight: 600; color: var(--primary); font-size: 16px; margin-bottom: 5px; padding-bottom: 5px; border-bottom: 2px solid var(--light);
+    }
+    .building-option {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px; background-color: var(--light);
+      border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; text-align: left; color: var(--dark);
+    }
+    .building-option:hover { transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .building-option.selected { background-color: var(--primary); color: white; box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--primary); }
+    .building-option.demolish { background-color: var(--danger); color: white; margin-top: 10px; }
+    .building-option.demolish.selected { box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--danger); }
+    .building-option:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .building-icon { font-size: 18px; }
+
+    #game-board-container {
+      flex-grow: 1; position: relative; background-color: var(--light);
+      border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    #game-board {
+      display: grid; grid-template-columns: repeat(30, 25px); grid-template-rows: repeat(30, 25px);
+      gap: 1px; background-color: var(--gray); position: relative;
+    }
+    .tile {
+      width: 25px; height: 25px; background-color: #74c69d; cursor: pointer; position: relative; transition: all 0.08s ease; z-index: 1;
+    }
+    .tile:hover { transform: scale(1.08); z-index: 3; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
+
+    /* Building colors */
+    .tile.residential { background-color: var(--residential); }
+    .tile.commercial  { background-color: var(--commercial); }
+    .tile.industrial  { background-color: var(--industrial); }
+    .tile.road        { background-color: var(--road); display: flex; justify-content: center; align-items: center; }
+    .tile.park        { background-color: var(--park); }
+    .tile.school      { background-color: var(--school); }
+    .tile.hospital    { background-color: var(--hospital); }
+    .tile.police      { background-color: var(--police); }
+    .tile.fire        { background-color: var(--fire); }
+    .tile.power-plant { background-color: var(--power); }
+    .tile.water       { background-color: var(--water); }
+    .tile.landmark    { background-color: var(--landmark); }
+
+    /* Simple, valid patterns */
+    .tile.residential::after,
+    .tile.commercial::after,
+    .tile.industrial::after {
+      content: ""; position: absolute; inset: 2px; border-radius: 2px; opacity: 0.35;
+      pointer-events: none;
+    }
+    .tile.residential::after { background: repeating-linear-gradient(45deg, #fff 0 2px, transparent 2px 6px); }
+    .tile.commercial::after  { background: linear-gradient(45deg, rgba(255,255,255,0.4) 25%, transparent 25% 50%, rgba(255,255,255,0.4) 50% 75%, transparent 75%); background-size: 6px 6px; }
+    .tile.industrial::after  { background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0 1px, transparent 1px 4px); }
+
+    .tile.road::before {
+      content: ""; position: absolute; width: 60%; height: 4px; background-color: rgba(255,255,255,0.5);
+    }
+
+    .tile.park::after       { content: "🌳"; position: absolute; font-size: 12px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+    .tile.school::after     { content: "🏫"; position: absolute; font-size: 12px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+    .tile.hospital::after   { content: "🏥"; position: absolute; font-size: 12px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+    .tile.police::after     { content: "👮"; position: absolute; font-size: 12px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+    .tile.fire::after       { content: "🚒"; position: absolute; font-size: 12px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+    .tile.power-plant::after{ content: "⚡"; position: absolute; font-size: 12px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+    .tile.water::after      { content: "💧"; position: absolute; font-size: 12px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+    .tile.landmark::after   { content: "🗼"; position: absolute; font-size: 12px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+    .tile-preview {
+      position: absolute; pointer-events: none; z-index: 2; opacity: 0.6; border: 1px dashed rgba(255,255,255,0.85); border-radius: 3px;
+    }
+
+    #sidebar { width: 300px; display: flex; flex-direction: column; gap: 20px; }
+    .panel { background-color: var(--white); border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .panel-title { font-size: 18px; font-weight: 600; color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+    .panel-title-icon { font-size: 20px; }
+    .stat-item { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+    .stat-name { color: var(--gray); }
+    .stat-value { font-weight: 500; }
+
+    #events-log {
+      height: 200px; overflow-y: auto; background-color: var(--light); padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .event-entry { padding: 8px 10px; border-radius: 5px; background-color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); line-height: 1.4; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px);} to { opacity: 1; transform: translateY(0);} }
+    .event-positive { border-left: 3px solid var(--success); }
+    .event-negative { border-left: 3px solid var(--danger); }
+    .event-neutral  { border-left: 3px solid var(--info); }
+    .event-date { font-weight: 600; color: var(--primary); font-size: 12px; margin-bottom: 3px; }
+
+    .progress-container { margin-top: 15px; }
+    .progress-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
+    .progress-bar { height: 8px; background-color: var(--light); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .happiness-fill { background-color: var(--success); }
+    .pollution-fill { background-color: var(--danger); }
+    .funds-fill { background-color: var(--warning); }
+
+    #save-load-buttons { display: flex; gap: 10px; margin-top: 10px; }
+    .save-load-btn {
+      flex: 1; padding: 10px; border: none; border-radius: 6px; background-color: var(--primary); color: white; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .save-load-btn:hover { background-color: var(--primary-dark); transform: translateY(-2px); }
+    .save-load-btn-icon { font-size: 16px; }
+
+    #message {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      padding: 12px 24px; border-radius: 8px; font-weight: 500; z-index: 100; opacity: 0;
+      transition: opacity 0.3s, transform 0.3s; max-width: 80%; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: none;
+    }
+    .message-show { opacity: 1; transform: translate(-50%, 0); }
+    .message-success { background-color: var(--success); color: white; }
+    .message-error { background-color: var(--danger); color: white; }
+    .message-info { background-color: var(--info); color: white; }
+
+    #game-overlay {
+      position: fixed; inset: 0; background-color: rgba(0,0,0,0.8);
+      display: flex; justify-content: center; align-items: center; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    #game-overlay.show { opacity: 1; pointer-events: all; }
+    #game-overlay-content {
+      background-color: var(--white); padding: 30px; border-radius: 15px; max-width: 500px; text-align: center;
+      transform: translateY(20px); transition: transform 0.3s ease; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    #game-overlay.show #game-overlay-content { transform: translateY(0); }
+    #overlay-title { font-size: 28px; color: var(--primary); margin-bottom: 15px; }
+    #overlay-message { font-size: 18px; margin-bottom: 25px; color: var(--dark); line-height: 1.5; }
+    #overlay-button {
+      padding: 12px 24px; background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    #overlay-button:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+
+    #tooltip {
+      position: absolute; background-color: rgba(0,0,0,0.9); color: white; padding: 10px 15px; border-radius: 8px; font-size: 13px; pointer-events: none; z-index: 100; max-width: 260px; display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2); backdrop-filter: blur(2px); line-height: 1.5; transform: translate(-50%, 10px); animation: tooltipFadeIn 0.2s ease;
+    }
+    @keyframes tooltipFadeIn { from { opacity: 0; transform: translate(-50%, 0);} to { opacity: 1; transform: translate(-50%, 10px);} }
+    #tooltip::after {
+      content: ""; position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
+      border-width: 0 5px 5px 5px; border-style: solid; border-color: transparent transparent rgba(0, 0, 0, 0.9) transparent;
+    }
+    .tooltip-title { font-weight: 600; margin-bottom: 5px; color: var(--warning); }
+    .tooltip-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .tooltip-label { color: var(--gray); }
+    .tooltip-value { font-weight: 500; }
+
+    .pulse { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { transform: scale(1);} 50% { transform: scale(1.05);} 100% { transform: scale(1);} }
+
+    .building-effect {
+      position: absolute; inset: 0; pointer-events: none; z-index: 4; display: flex; justify-content: center; align-items: center; animation: effectFade 1s ease-out; opacity: 0;
+    }
+    @keyframes effectFade { 0% { opacity: 0.8; transform: scale(0.5);} 100% { opacity: 0; transform: scale(1.5);} }
+    .building-effect-icon { font-size: 20px; }
+    .positive-effect { color: rgba(76, 201, 240, 0.7); }
+    .negative-effect { color: rgba(247, 37, 133, 0.7); }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      #game-area { flex-direction: column; }
+      #game-board-container { order: 1; }
+      #building-panel { width: 100%; order: 2; flex-direction: row; flex-wrap: wrap; }
+      .building-category { flex: 1; min-width: 150px; }
+      #sidebar { width: 100%; order: 3; }
+    }
+    @media (max-width: 768px) {
+      #game-header { flex-direction: column; gap: 15px; text-align: center; }
+      #resources { flex-wrap: wrap; justify-content: center; }
+      #game-board { grid-template-columns: repeat(30, 20px); grid-template-rows: repeat(30, 20px); }
+      .tile { width: 20px; height: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="game-header">
+      <h1 id="game-title">Metropolis Builder</h1>
+      <div id="resources">
+        <div class="resource">
+          <span class="resource-icon">💰</span>
+          <span id="money">50,000</span>
+        </div>
+        <div class="resource">
+          <span class="resource-icon">🏠</span>
+          <span id="population">0</span>
+        </div>
+        <div class="resource">
+          <span class="resource-icon">😊</span>
+          <span id="happiness">50</span>%
+        </div>
+        <div class="resource">
+          <span class="resource-icon">🏭</span>
+          <span id="pollution">0</span>%
+        </div>
+        <div class="resource">
+          <span class="resource-icon">📅</span>
+          Year <span id="year">1</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="game-area">
+      <div id="building-panel">
+        <div class="building-category">
+          <div class="category-title">Zoning</div>
+          <button class="building-option" data-type="residential" data-cost="200">
+            <span class="building-icon">🏠</span>
+            <span>Residential ($200)</span>
+          </button>
+          <button class="building-option" data-type="commercial" data-cost="300">
+            <span class="building-icon">🏢</span>
+            <span>Commercial ($300)</span>
+          </button>
+          <button class="building-option" data-type="industrial" data-cost="400">
+            <span class="building-icon">🏭</span>
+            <span>Industrial ($400)</span>
+          </button>
+        </div>
+
+        <div class="building-category">
+          <div class="category-title">Infrastructure</div>
+          <button class="building-option" data-type="road" data-cost="100">
+            <span class="building-icon">🛣️</span>
+            <span>Road ($100)</span>
+          </button>
+          <button class="building-option" data-type="power-plant" data-cost="2000">
+            <span class="building-icon">⚡</span>
+            <span>Power Plant ($2000)</span>
+          </button>
+          <button class="building-option" data-type="water" data-cost="1500">
+            <span class="building-icon">💧</span>
+            <span>Water Tower ($1500)</span>
+          </button>
+        </div>
+
+        <div class="building-category">
+          <div class="category-title">Services</div>
+          <button class="building-option" data-type="school" data-cost="800">
+            <span class="building-icon">🏫</span>
+            <span>School ($800)</span>
+          </button>
+          <button class="building-option" data-type="hospital" data-cost="1200">
+            <span class="building-icon">🏥</span>
+            <span>Hospital ($1200)</span>
+          </button>
+          <button class="building-option" data-type="police" data-cost="1000">
+            <span class="building-icon">👮</span>
+            <span>Police ($1000)</span>
+          </button>
+          <button class="building-option" data-type="fire" data-cost="1000">
+            <span class="building-icon">🚒</span>
+            <span>Fire Station ($1000)</span>
+          </button>
+        </div>
+
+        <div class="building-category">
+          <div class="category-title">Amenities</div>
+          <button class="building-option" data-type="park" data-cost="150">
+            <span class="building-icon">🌳</span>
+            <span>Park ($150)</span>
+          </button>
+          <button class="building-option" data-type="landmark" data-cost="2500">
+            <span class="building-icon">🗼</span>
+            <span>Landmark ($2500)</span>
+          </button>
+        </div>
+
+        <button id="demolish-btn" class="building-option demolish">
+          <span class="building-icon">🔨</span>
+          <span>Demolish</span>
+        </button>
+      </div>
+
+      <div id="game-board-container">
+        <div id="game-board"></div>
+        <div id="tooltip"></div>
+      </div>
+
+      <div id="sidebar">
+        <div class="panel" id="stats-panel">
+          <h3 class="panel-title">
+            <span class="panel-title-icon">📊</span>
+            City Statistics
+          </h3>
+          <div class="stat-item">
+            <span class="stat-name">Monthly Income:</span>
+            <span class="stat-value">$<span id="tax-income">0</span></span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Monthly Expenses:</span>
+            <span class="stat-value">$<span id="expenses">0</span></span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Available Jobs:</span>
+            <span class="stat-value"><span id="jobs">0</span>/<span id="workers">0</span></span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Education Rate:</span>
+            <span class="stat-value"><span id="education">0</span>%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Health Coverage:</span>
+            <span class="stat-value"><span id="health">0</span>%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Safety Rating:</span>
+            <span class="stat-value"><span id="safety">0</span>%</span>
+          </div>
+
+          <div class="progress-container">
+            <div class="progress-label">
+              <span>Happiness</span>
+              <span id="happiness-value">50%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill happiness-fill" style="width: 50%"></div>
+            </div>
+
+            <div class="progress-label" style="margin-top: 10px;">
+              <span>Pollution</span>
+              <span id="pollution-value">0%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill pollution-fill" style="width: 0%"></div>
+            </div>
+
+            <div class="progress-label" style="margin-top: 10px;">
+              <span>City Funds</span>
+              <span id="funds-value">$50,000</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill funds-fill" style="width: 50%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="events-panel">
+          <h3 class="panel-title">
+            <span class="panel-title-icon">📰</span>
+            City Events
+          </h3>
+          <div id="events-log"></div>
+        </div>
+
+        <div class="panel" id="save-load-panel">
+          <h3 class="panel-title">
+            <span class="panel-title-icon">💾</span>
+            Game Management
+          </h3>
+          <div id="save-load-buttons">
+            <button id="save-btn" class="save-load-btn">
+              <span class="save-load-btn-icon">💾</span>
+              Save Game
+            </button>
+            <button id="load-btn" class="save-load-btn">
+              <span class="save-load-btn-icon">📂</span>
+              Load Game
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="message"></div>
+
+  <div id="game-overlay">
+    <div id="game-overlay-content">
+      <h2 id="overlay-title">Game Over</h2>
+      <p id="overlay-message">Your city has gone bankrupt!</p>
+      <button id="overlay-button">Start New City</button>
+    </div>
+  </div>
+
+  <script>
+    // Game state
+    const gameState = {
+      money: 50000,
+      population: 0,
+      happiness: 50,
+      pollution: 0,
+      year: 1,
+      month: 1,
+      selectedBuilding: null,
+      selectedBuildingCost: 0,
+      demolishMode: false,
+      buildings: [], // {x,y,type,size}
+      taxIncome: 0,
+      expenses: 0,
+      jobs: 0,
+      workers: 0,
+      education: 0,
+      health: 0,
+      safety: 0,
+      poweredTiles: new Set(),
+      wateredTiles: new Set(),
+      gameOver: false,
+      eventLog: []
+    };
+
+    // Building data
+    const buildingTypes = {
+      residential: {
+        name: "Residential Zone", cost: 200, size: 1, population: 20, tax: 10, happiness: 1, pollution: 1,
+        powerNeed: 1, waterNeed: 1, workers: 0, requiresRoad: true,
+        description: "Houses for your citizens. Place near parks for happiness boost.",
+        adjacencyBonus: {
+          park: { happiness: 3, value: 5, description: "+3 happiness, +5 value from parks" },
+          commercial: { happiness: 1, value: 2, description: "+1 happiness, +2 value from commercial" },
+          industrial: { happiness: -2, value: -5, description: "-2 happiness, -5 value from industrial" }
+        }
+      },
+      commercial: {
+        name: "Commercial Zone", cost: 300, size: 1, jobs: 15, tax: 15, happiness: 0, pollution: 3,
+        powerNeed: 2, waterNeed: 1, workers: 5, requiresRoad: true,
+        description: "Businesses and shops. Provides jobs and tax income.",
+        adjacencyBonus: {
+          residential: { happiness: 1, value: 3, description: "+1 happiness, +3 value from residential" },
+          industrial: { happiness: -1, value: 2, description: "-1 happiness, +2 value from industrial" }
+        }
+      },
+      industrial: {
+        name: "Industrial Zone", cost: 400, size: 1, jobs: 30, tax: 20, happiness: -2, pollution: 15,
+        powerNeed: 3, waterNeed: 2, workers: 10, requiresRoad: true,
+        description: "Factories and production. High pollution but many jobs.",
+        adjacencyBonus: {
+          residential: { happiness: -3, value: -5, description: "-3 happiness, -5 value from residential" },
+          commercial: { happiness: -1, value: 2, description: "-1 happiness, +2 value from commercial" }
+        }
+      },
+      road: {
+        name: "Road", cost: 100, size: 1, happiness: 0, pollution: 1, powerNeed: 0, waterNeed: 0, workers: 0, requiresRoad: false,
+        description: "Connects your city. Required for most buildings to function."
+      },
+      park: {
+        name: "Park", cost: 150, size: 1, happiness: 5, pollution: -2, powerNeed: 0, waterNeed: 1, workers: 2, requiresRoad: false,
+        description: "Increases happiness and reduces pollution in nearby areas.",
+        adjacencyBonus: { residential: { happiness: 3, value: 5, description: "+3 happiness, +5 value for residential" } }
+      },
+      school: {
+        name: "School", cost: 800, size: 2, happiness: 2, pollution: 0, powerNeed: 2, waterNeed: 1, workers: 10, requiresRoad: true,
+        serviceRadius: 10, serviceType: 'education', description: "Provides education to nearby residential areas."
+      },
+      hospital: {
+        name: "Hospital", cost: 1200, size: 3, happiness: 3, pollution: 1, powerNeed: 3, waterNeed: 2, workers: 15, requiresRoad: true,
+        serviceRadius: 12, serviceType: 'health', description: "Provides healthcare to nearby residential areas."
+      },
+      police: {
+        name: "Police Station", cost: 1000, size: 2, happiness: 1, pollution: 0, powerNeed: 2, waterNeed: 1, workers: 12, requiresRoad: true,
+        serviceRadius: 10, serviceType: 'safety', description: "Increases safety in nearby areas."
+      },
+      fire: {
+        name: "Fire Station", cost: 1000, size: 2, happiness: 1, pollution: 0, powerNeed: 2, waterNeed: 1, workers: 12, requiresRoad: true,
+        serviceRadius: 10, serviceType: 'safety', description: "Increases safety in nearby areas."
+      },
+      'power-plant': {
+        name: "Power Plant", cost: 2000, size: 4, happiness: -5, pollution: 20, powerNeed: 0, waterNeed: 3, workers: 20, requiresRoad: true,
+        powerOutput: 100, description: "Provides power to your city. High pollution."
+      },
+      water: {
+        name: "Water Tower", cost: 1500, size: 3, happiness: 0, pollution: 5, powerNeed: 1, waterNeed: 0, workers: 15, requiresRoad: true,
+        waterOutput: 100, description: "Provides water to your city."
+      },
+      landmark: {
+        name: "Landmark", cost: 2500, size: 2, happiness: 10, pollution: 0, powerNeed: 1, waterNeed: 1, workers: 5, requiresRoad: true,
+        description: "Iconic structure that boosts happiness city-wide.",
+        adjacencyBonus: {
+          residential: { happiness: 5, value: 10, description: "+5 happiness, +10 value for residential" },
+          commercial: { happiness: 3, value: 7, description: "+3 happiness, +7 value for commercial" }
+        }
+      }
+    };
+
+    // Initialize board
+    const gameBoard = document.getElementById('game-board');
+    const boardSize = 30;
+
+    // Detect current tile size from CSS (responsive)
+    function currentTileSize() {
+      // any tile
+      const tile = gameBoard.querySelector('.tile');
+      return tile ? tile.offsetWidth : 25;
+    }
+
+    // Create tiles
+    for (let y = 0; y < boardSize; y++) {
+      for (let x = 0; x < boardSize; x++) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.dataset.x = x;
+        tile.dataset.y = y;
+        tile.addEventListener('click', () => handleTileClick(x, y));
+        tile.addEventListener('mouseover', () => handleTileHover(x, y));
+        tile.addEventListener('mouseout', () => { hideTooltip(); clearPreviews(); });
+        gameBoard.appendChild(tile);
+      }
+    }
+
+    // Building selection buttons
+    const buildingButtons = document.querySelectorAll('.building-option');
+    buildingButtons.forEach(button => {
+      if (button.id !== 'demolish-btn') {
+        button.addEventListener('click', () => {
+          if (button.disabled) return;
+          gameState.selectedBuilding = button.dataset.type;
+          gameState.selectedBuildingCost = parseInt(button.dataset.cost);
+          gameState.demolishMode = false;
+          updateUI();
+        });
+      }
+    });
+
+    // Demolish toggle
+    document.getElementById('demolish-btn').addEventListener('click', () => {
+      gameState.demolishMode = !gameState.demolishMode;
+      gameState.selectedBuilding = null;
+      updateUI();
+    });
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        gameState.selectedBuilding = null;
+        gameState.demolishMode = false;
+        updateUI();
+      } else if (e.key.toLowerCase() === 'd') {
+        gameState.demolishMode = !gameState.demolishMode;
+        if (gameState.demolishMode) gameState.selectedBuilding = null;
+        updateUI();
+      }
+    });
+
+    // Save/Load
+    document.getElementById('save-btn').addEventListener('click', saveGame);
+    document.getElementById('load-btn').addEventListener('click', loadGame);
+
+    // Overlay button
+    document.getElementById('overlay-button').addEventListener('click', startNewGame);
+
+    function handleTileClick(x, y) {
+      if (gameState.gameOver) return;
+
+      if (gameState.demolishMode) {
+        const building = findBuildingAt(x, y);
+        if (building) {
+          removeBuildingFootprint(building);
+          showMessage(`Demolished ${buildingTypes[building.type].name}`, 'success');
+          logEvent(`Demolished ${buildingTypes[building.type].name}`, 'neutral');
+          showBuildingEffect(building.x, building.y, 'negative');
+          updateStats();
+          updateUI();
+        }
+        return;
+      }
+
+      if (!gameState.selectedBuilding) return;
+
+      const type = gameState.selectedBuilding;
+      const data = buildingTypes[type];
+
+      if (gameState.money < data.cost) {
+        showMessage(`Not enough money to build ${data.name} (Need $${data.cost})`, 'error');
+        return;
+      }
+
+      // Check space
+      if (!canPlaceBuilding(x, y, data.size)) {
+        showMessage(`Not enough space to build ${data.name}`, 'error');
+        return;
+      }
+
+      // Road access
+      if (data.requiresRoad && !hasRoadAccess(x, y, data.size)) {
+        showMessage(`${data.name} must be built next to a road`, 'error');
+        return;
+      }
+
+      // Place building
+      placeBuilding(x, y, data.size, type);
+      gameState.money -= data.cost;
+      updateStats();
+      showMessage(`Built ${data.name} for $${data.cost}`, 'success');
+      logEvent(`Built new ${data.name} in district ${getDistrictName(x, y)}`, 'positive');
+      showBuildingEffect(x, y, 'positive');
+      updateUI();
+    }
+
+    function showBuildingEffect(x, y, type) {
+      const tileIndex = y * boardSize + x;
+      const tile = gameBoard.children[tileIndex];
+      const effect = document.createElement('div');
+      effect.className = `building-effect ${type}-effect`;
+      const icon = document.createElement('span');
+      icon.className = 'building-effect-icon';
+      icon.textContent = type === 'positive' ? '✨' : '💥';
+      effect.appendChild(icon);
+      tile.appendChild(effect);
+      setTimeout(() => effect.remove(), 1000);
+    }
+
+    function clearPreviews() {
+      document.querySelectorAll('.tile-preview').forEach(el => el.remove());
+    }
+
+    function handleTileHover(x, y) {
+      if (gameState.gameOver) return;
+      const tileIndex = y * boardSize + x;
+      const tile = gameBoard.children[tileIndex];
+
+      clearPreviews();
+
+      const ts = currentTileSize();
+
+      // Show building preview when placing
+      if (gameState.selectedBuilding && !gameState.demolishMode) {
+        const type = gameState.selectedBuilding;
+        const data = buildingTypes[type];
+
+        const canBuild = canPlaceBuilding(x, y, data.size) && (!data.requiresRoad || hasRoadAccess(x, y, data.size));
+        const enoughFunds = gameState.money >= data.cost;
+
+        if (data.size === 1) {
+          const preview = document.createElement('div');
+          preview.className = `tile-preview ${type}`;
+          preview.style.width = `${ts}px`;
+          preview.style.height = `${ts}px`;
+          preview.style.left = `${x * (ts + 1)}px`;
+          preview.style.top = `${y * (ts + 1)}px`;
+          preview.style.backgroundColor = canBuild && enoughFunds ? 'rgba(100,255,120,0.35)' : 'rgba(255,100,100,0.35)';
+          gameBoard.appendChild(preview);
+        } else {
+          for (let dy = 0; dy < data.size; dy++) {
+            for (let dx = 0; dx < data.size; dx++) {
+              if (x + dx < boardSize && y + dy < boardSize) {
+                const preview = document.createElement('div');
+                preview.className = 'tile-preview';
+                preview.style.width = `${ts}px`;
+                preview.style.height = `${ts}px`;
+                preview.style.left = `${(x + dx) * (ts + 1)}px`;
+                preview.style.top = `${(y + dy) * (ts + 1)}px`;
+                preview.style.backgroundColor = canBuild && enoughFunds ? 'rgba(100,255,120,0.35)' : 'rgba(255,100,100,0.35)';
+                gameBoard.appendChild(preview);
+              }
+            }
+          }
+        }
+        showTooltip(x, y, data, { canBuild, enoughFunds });
+      } else if (tile.classList.length > 1) {
+        // Existing building info
+        const bType = Array.from(tile.classList).find(cls => cls !== 'tile' && cls !== 'tile-preview');
+        if (bType) {
+          showTooltip(x, y, buildingTypes[bType]);
+        }
+      }
+    }
+
+    function showTooltip(x, y, buildingData, extra = null) {
+      const tooltip = document.getElementById('tooltip');
+      const tileIndex = y * boardSize + x;
+      const tile = gameBoard.children[tileIndex];
+      const rect = tile.getBoundingClientRect();
+
+      let html = `
+        <div class="tooltip-title">${buildingData.name}</div>
+        <div style="margin-bottom:8px; font-size:12px;">${buildingData.description}</div>
+        <div class="tooltip-row"><span class="tooltip-label">Cost:</span><span class="tooltip-value">$${buildingData.cost.toLocaleString()}</span></div>
+      `;
+
+      if (buildingData.size > 1) {
+        html += `<div class="tooltip-row"><span class="tooltip-label">Size:</span><span class="tooltip-value">${buildingData.size}x${buildingData.size}</span></div>`;
+      }
+      if (buildingData.population) html += `<div class="tooltip-row"><span class="tooltip-label">Population:</span><span class="tooltip-value">+${buildingData.population}</span></div>`;
+      if (buildingData.jobs) html += `<div class="tooltip-row"><span class="tooltip-label">Jobs:</span><span class="tooltip-value">+${buildingData.jobs}</span></div>`;
+      if (buildingData.tax) html += `<div class="tooltip-row"><span class="tooltip-label">Tax Income:</span><span class="tooltip-value">+$${buildingData.tax}/month</span></div>`;
+      if (buildingData.happiness) html += `<div class="tooltip-row"><span class="tooltip-label">Happiness:</span><span class="tooltip-value">${buildingData.happiness > 0 ? '+' : ''}${buildingData.happiness}</span></div>`;
+      if (buildingData.pollution) html += `<div class="tooltip-row"><span class="tooltip-label">Pollution:</span><span class="tooltip-value">${buildingData.pollution > 0 ? '+' : ''}${buildingData.pollution}</span></div>`;
+      if (buildingData.powerNeed) html += `<div class="tooltip-row"><span class="tooltip-label">Power Need:</span><span class="tooltip-value">${buildingData.powerNeed}</span></div>`;
+      if (buildingData.waterNeed) html += `<div class="tooltip-row"><span class="tooltip-label">Water Need:</span><span class="tooltip-value">${buildingData.waterNeed}</span></div>`;
+      if (buildingData.requiresRoad) html += `<div class="tooltip-row"><span class="tooltip-label">Road Access:</span><span class="tooltip-value">Required</span></div>`;
+      if (buildingData.serviceRadius) html += `<div class="tooltip-row"><span class="tooltip-label">Service Radius:</span><span class="tooltip-value">${buildingData.serviceRadius} tiles</span></div>`;
+
+      if (buildingData.adjacencyBonus) {
+        html += `<div style="margin-top:8px; font-size:11px; color: var(--gray);">`;
+        for (const [, bonus] of Object.entries(buildingData.adjacencyBonus)) {
+          html += `<div>${bonus.description}</div>`;
+        }
+        html += `</div>`;
+      }
+
+      if (extra) {
+        html += `<div style="margin-top:8px; font-size:12px;">`;
+        html += `<div class="tooltip-row"><span class="tooltip-label">Placement:</span><span class="tooltip-value" style="color:${extra.canBuild ? '#4caf50' : '#f44336'}">${extra.canBuild ? 'OK' : 'Blocked'}</span></div>`;
+        html += `<div class="tooltip-row"><span class="tooltip-label">Funds:</span><span class="tooltip-value" style="color:${extra.enoughFunds ? '#4caf50' : '#f44336'}">${extra.enoughFunds ? 'Sufficient' : 'Insufficient'}</span></div>`;
+        html += `</div>`;
+      }
+
+      tooltip.innerHTML = html;
+      tooltip.style.left = `${rect.left + window.scrollX + rect.width / 2}px`;
+      tooltip.style.top = `${rect.bottom + window.scrollY}px`;
+      tooltip.style.display = 'block';
+    }
+
+    function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
+
+    function canPlaceBuilding(x, y, size) {
+      for (let dy = 0; dy < size; dy++) {
+        for (let dx = 0; dx < size; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx >= boardSize || ny >= boardSize) return false;
+          const tile = gameBoard.children[ny * boardSize + nx];
+          if (tile.classList.length > 1 && !tile.classList.contains('tile-preview')) return false;
+        }
+      }
+      return true;
+    }
+
+    function hasRoadAccess(x, y, size) {
+      // Any tile of footprint adjacent (N/E/S/W) to road
+      const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
+      for (let dy = 0; dy < size; dy++) {
+        for (let dx = 0; dx < size; dx++) {
+          const cx = x + dx, cy = y + dy;
+          for (const [mx, my] of dirs) {
+            const nx = cx + mx, ny = cy + my;
+            if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+              const tile = gameBoard.children[ny * boardSize + nx];
+              if (tile.classList.contains('road')) return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    function placeBuilding(x, y, size, type) {
+      for (let dy = 0; dy < size; dy++) {
+        for (let dx = 0; dx < size; dx++) {
+          const nx = x + dx, ny = y + dy;
+          const tile = gameBoard.children[ny * boardSize + nx];
+          tile.classList.add(type);
+        }
+      }
+      addBuilding(x, y, type, size);
+    }
+
+    function addBuilding(x, y, type, size) {
+      gameState.buildings.push({ x, y, type, size });
+    }
+
+    function findBuildingAt(x, y) {
+      // Find a building whose footprint covers (x,y)
+      for (const b of gameState.buildings) {
+        const size = b.size ?? buildingTypes[b.type].size;
+        if (x >= b.x && x < b.x + size && y >= b.y && y < b.y + size) {
+          return { ...b, size };
+        }
+      }
+      return null;
+    }
+
+    function removeBuildingFootprint(building) {
+      const size = building.size ?? buildingTypes[building.type].size;
+      for (let dy = 0; dy < size; dy++) {
+        for (let dx = 0; dx < size; dx++) {
+          const nx = building.x + dx, ny = building.y + dy;
+          if (nx < boardSize && ny < boardSize) {
+            const tile = gameBoard.children[ny * boardSize + nx];
+            tile.className = 'tile';
+          }
+        }
+      }
+      gameState.buildings = gameState.buildings.filter(b => !(b.x === building.x && b.y === building.y && b.type === building.type));
+    }
+
+    function countAdjacentBuildings(x, y, type) {
+      const dirs = [
+        [-1,-1],[0,-1],[1,-1],
+        [-1, 0],       [1, 0],
+        [-1, 1],[0, 1],[1, 1]
+      ];
+      let count = 0;
+      for (const [dx, dy] of dirs) {
+        const nx = x + dx, ny = y + dy;
+        if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+          const tile = gameBoard.children[ny * boardSize + nx];
+          if (tile.classList.contains(type)) count++;
+        }
+      }
+      return count;
+    }
+
+    function coverArea(x, y, radius, serviceType, covered) {
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const dist = Math.hypot(dx, dy);
+          if (dist <= radius) {
+            const nx = x + dx, ny = y + dy;
+            if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+              const tile = gameBoard.children[ny * boardSize + nx];
+              if (tile.classList.contains('residential')) {
+                covered[serviceType].add(`${nx},${ny}`);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function updateStats() {
+      // Reset
+      gameState.population = 0;
+      gameState.taxIncome = 0;
+      gameState.expenses = 0;
+      gameState.jobs = 0;
+      gameState.workers = 0;
+      gameState.education = 0;
+      gameState.health = 0;
+      gameState.safety = 0;
+      gameState.pollution = 0;
+      gameState.happiness = 50;
+
+      gameState.poweredTiles = new Set();
+      gameState.wateredTiles = new Set();
+
+      const service = { powerPlants: [], waterTowers: [], schools: [], hospitals: [], police: [], fire: [] };
+
+      // First pass
+      for (const b of gameState.buildings) {
+        const t = buildingTypes[b.type];
+        if (t.population) gameState.population += t.population;
+        if (t.jobs) gameState.jobs += t.jobs;
+        gameState.workers += t.workers || 0;
+        if (t.tax) gameState.taxIncome += t.tax;
+        // Expenses from workers + 1% maintenance of build cost
+        gameState.expenses += (t.workers || 0) * 5 + Math.ceil(t.cost * 0.01);
+        gameState.happiness += t.happiness || 0;
+        gameState.pollution += t.pollution || 0;
+
+        if (b.type === 'power-plant') service.powerPlants.push(b);
+        else if (b.type === 'water') service.waterTowers.push(b);
+        else if (b.type === 'school') service.schools.push(b);
+        else if (b.type === 'hospital') service.hospitals.push(b);
+        else if (b.type === 'police') service.police.push(b);
+        else if (b.type === 'fire') service.fire.push(b);
+      }
+
+      // Power/water coverage (global ratio)
+      let totalPowerOutput = 0, totalPowerNeed = 0;
+      for (const p of service.powerPlants) totalPowerOutput += buildingTypes['power-plant'].powerOutput;
+      for (const b of gameState.buildings) totalPowerNeed += buildingTypes[b.type].powerNeed || 0;
+
+      let totalWaterOutput = 0, totalWaterNeed = 0;
+      for (const w of service.waterTowers) totalWaterOutput += buildingTypes['water'].waterOutput;
+      for (const b of gameState.buildings) totalWaterNeed += buildingTypes[b.type].waterNeed || 0;
+
+      const powerCoverage = Math.min(1, totalPowerOutput / Math.max(1, totalPowerNeed));
+      const waterCoverage = Math.min(1, totalWaterOutput / Math.max(1, totalWaterNeed));
+
+      // Services coverage over residential tiles
+      const covered = { education: new Set(), health: new Set(), safety: new Set() };
+      for (const s of service.schools) coverArea(s.x, s.y, buildingTypes['school'].serviceRadius, 'education', covered);
+      for (const h of service.hospitals) coverArea(h.x, h.y, buildingTypes['hospital'].serviceRadius, 'health', covered);
+      for (const p of [...service.police, ...service.fire]) coverArea(p.x, p.y, buildingTypes[p.type].serviceRadius, 'safety', covered);
+
+      const residentials = gameState.buildings.filter(b => b.type === 'residential');
+      if (residentials.length > 0) {
+        gameState.education = Math.round((covered.education.size / residentials.length) * 100);
+        gameState.health = Math.round((covered.health.size / residentials.length) * 100);
+        gameState.safety = Math.round((covered.safety.size / residentials.length) * 100);
+      }
+
+      // Adjacency bonuses
+      for (const b of gameState.buildings) {
+        const t = buildingTypes[b.type];
+        if (t.adjacencyBonus) {
+          for (const [adjType, bonus] of Object.entries(t.adjacencyBonus)) {
+            const count = countAdjacentBuildings(b.x, b.y, adjType);
+            gameState.happiness += count * (bonus.happiness || 0);
+            if (b.type === 'residential') gameState.taxIncome += count * (bonus.value || 0);
+          }
+        }
+      }
+
+      // Service effects on happiness
+      gameState.happiness += Math.floor(gameState.education / 20);
+      gameState.happiness += Math.floor(gameState.health / 15);
+      gameState.happiness += Math.floor(gameState.safety / 10);
+
+      // Power/water effect
+      if (powerCoverage < 0.9) gameState.happiness -= Math.floor((0.9 - powerCoverage) * 20);
+      if (waterCoverage < 0.9) gameState.happiness -= Math.floor((0.9 - waterCoverage) * 20);
+
+      // Employment effect
+      const employmentRate = gameState.jobs > 0 ? Math.min(1, gameState.workers / gameState.jobs) : 1;
+      if (employmentRate < 0.9) gameState.happiness -= Math.floor((0.9 - employmentRate) * 15);
+      else if (employmentRate > 1.1) gameState.happiness += Math.floor((employmentRate - 1.1) * 10);
+
+      // Adjust income by utilities coverage
+      const utilityMultiplier = Math.min(powerCoverage, waterCoverage);
+      gameState.taxIncome = Math.floor(gameState.taxIncome * (0.7 + 0.3 * utilityMultiplier)); // up to 30% boost when fully covered
+
+      // Pollution penalties/fines
+      if (gameState.pollution > 70) gameState.expenses += 200; // monthly fines
+      if (gameState.pollution > 90) gameState.happiness -= 5;
+
+      // Cap values
+      gameState.happiness = Math.max(0, Math.min(100, gameState.happiness));
+      gameState.pollution = Math.max(0, Math.min(100, gameState.pollution));
+
+      // Bankruptcy condition
+      if (gameState.money < -5000 && !gameState.gameOver) {
+        gameOver();
+      }
+    }
+
+    function updateUI() {
+      // Resources
+      document.getElementById('money').textContent = gameState.money.toLocaleString();
+      document.getElementById('population').textContent = gameState.population.toLocaleString();
+      document.getElementById('happiness').textContent = gameState.happiness;
+      document.getElementById('pollution').textContent = gameState.pollution;
+      document.getElementById('year').textContent = gameState.year;
+
+      // Stats
+      document.getElementById('tax-income').textContent = gameState.taxIncome.toLocaleString();
+      document.getElementById('expenses').textContent = gameState.expenses.toLocaleString();
+      document.getElementById('jobs').textContent = gameState.jobs.toLocaleString();
+      document.getElementById('workers').textContent = gameState.workers.toLocaleString();
+      document.getElementById('education').textContent = gameState.education;
+      document.getElementById('health').textContent = gameState.health;
+      document.getElementById('safety').textContent = gameState.safety;
+
+      // Bars
+      document.querySelector('.happiness-fill').style.width = `${gameState.happiness}%`;
+      document.querySelector('.pollution-fill').style.width = `${gameState.pollution}%`;
+      const fundsPct = Math.min(100, Math.max(0, (gameState.money / 100000) * 100));
+      document.querySelector('.funds-fill').style.width = `${fundsPct}%`;
+      document.getElementById('funds-value').textContent = gameState.money.toLocaleString();
+      document.getElementById('happiness-value').textContent = `${gameState.happiness}%`;
+      document.getElementById('pollution-value').textContent = `${gameState.pollution}%`;
+
+      // Button states
+      buildingButtons.forEach(btn => {
+        btn.classList.remove('selected');
+        if (btn.dataset?.type === gameState.selectedBuilding) btn.classList.add('selected');
+        if (btn.id === 'demolish-btn' && gameState.demolishMode) btn.classList.add('selected');
+
+        // Disable unaffordable options (except demolish)
+        if (btn.id !== 'demolish-btn' && btn.dataset?.cost) {
+          const cost = parseInt(btn.dataset.cost);
+          btn.disabled = gameState.money < cost;
+        }
+      });
+
+      // Low funds pulse
+      const moneyDisplay = document.querySelector('.resource:first-child');
+      if (gameState.money < 5000) moneyDisplay.classList.add('pulse');
+      else moneyDisplay.classList.remove('pulse');
+    }
+
+    function showMessage(text, type) {
+      const el = document.getElementById('message');
+      el.textContent = text;
+      el.className = `message-${type} message-show`;
+      setTimeout(() => el.classList.remove('message-show'), 3000);
+    }
+
+    function logEvent(text, type = 'neutral') {
+      const log = document.getElementById('events-log');
+      const entry = document.createElement('div');
+      entry.className = `event-entry event-${type}`;
+      const dateStr = `Year ${gameState.year}, Month ${gameState.month}`;
+      entry.innerHTML = `<div class="event-date">${dateStr}</div><div>${text}</div>`;
+      log.insertBefore(entry, log.firstChild);
+      if (log.children.length > 20) log.removeChild(log.lastChild);
+      gameState.eventLog.unshift({ text, type, date: dateStr });
+    }
+
+    function getDistrictName(x, y) {
+      const districts = [
+        "Northside","Southside","Eastside","Westside","Downtown","Uptown","Midtown","Riverside",
+        "Hillside","Lakeside","Parkside","Old Town","New Town","Commerce District","Industrial Zone"
+      ];
+      const index = (x + y * boardSize) % districts.length;
+      return districts[index];
+    }
+
+    function gameOver() {
+      gameState.gameOver = true;
+      document.getElementById('overlay-title').textContent = "Game Over";
+      document.getElementById('overlay-message').textContent =
+        `Your city went bankrupt after ${gameState.year} years with a population of ${gameState.population.toLocaleString()}.`;
+      document.getElementById('game-overlay').classList.add('show');
+    }
+
+    function startNewGame() {
+      gameState.money = 50000;
+      gameState.population = 0;
+      gameState.happiness = 50;
+      gameState.pollution = 0;
+      gameState.year = 1;
+      gameState.month = 1;
+      gameState.selectedBuilding = null;
+      gameState.selectedBuildingCost = 0;
+      gameState.demolishMode = false;
+      gameState.buildings = [];
+      gameState.taxIncome = 0;
+      gameState.expenses = 0;
+      gameState.jobs = 0;
+      gameState.workers = 0;
+      gameState.education = 0;
+      gameState.health = 0;
+      gameState.safety = 0;
+      gameState.poweredTiles = new Set();
+      gameState.wateredTiles = new Set();
+      gameState.gameOver = false;
+      gameState.eventLog = [];
+
+      // Clear board
+      document.querySelectorAll('#game-board .tile').forEach(t => t.className = 'tile');
+
+      // Clear events
+      document.getElementById('events-log').innerHTML = '';
+
+      // Hide overlay
+      document.getElementById('game-overlay').classList.remove('show');
+
+      updateStats();
+      updateUI();
+      showMessage("New city started! Build your metropolis!", 'success');
+      logEvent("New city founded!", 'positive');
+    }
+
+    function saveGame() {
+      const saveData = {
+        ...gameState,
+        poweredTiles: Array.from(gameState.poweredTiles),
+        wateredTiles: Array.from(gameState.wateredTiles)
+      };
+      localStorage.setItem('metropolisBuilderSave', JSON.stringify(saveData));
+      showMessage("Game saved successfully!", 'success');
+      logEvent("Game progress saved", 'neutral');
+    }
+
+    function loadGame() {
+      const saveData = localStorage.getItem('metropolisBuilderSave');
+      if (!saveData) { showMessage("No saved game found", 'error'); return; }
+      try {
+        const loaded = JSON.parse(saveData);
+        Object.assign(gameState, loaded);
+        gameState.poweredTiles = new Set(loaded.poweredTiles);
+        gameState.wateredTiles = new Set(loaded.wateredTiles);
+        gameState.gameOver = false;
+
+        // Clear board
+        document.querySelectorAll('#game-board .tile').forEach(t => t.className = 'tile');
+
+        // Rebuild
+        for (const b of gameState.buildings) {
+          const size = b.size || buildingTypes[b.type].size;
+          placeBuilding(b.x, b.y, size, b.type);
+        }
+
+        // Rebuild event log
+        const log = document.getElementById('events-log');
+        log.innerHTML = '';
+        gameState.eventLog.slice(0, 20).forEach(e => {
+          const entry = document.createElement('div');
+          entry.className = `event-entry event-${e.type}`;
+          entry.innerHTML = `<div class="event-date">${e.date}</div><div>${e.text}</div>`;
+          log.appendChild(entry);
+        });
+
+        updateStats();
+        updateUI();
+        showMessage("Game loaded successfully!", 'success');
+        logEvent("Game progress loaded", 'neutral');
+      } catch (e) {
+        console.error("Load error:", e);
+        showMessage("Failed to load game data", 'error');
+      }
+    }
+
+    // Monthly updates
+    setInterval(() => {
+      if (gameState.gameOver) return;
+
+      // Advance time
+      gameState.month++;
+      if (gameState.month > 12) {
+        gameState.month = 1;
+        gameState.year++;
+        const growthRate = 0.01 + (gameState.happiness - 50) * 0.0005;
+        gameState.population = Math.floor(gameState.population * (1 + growthRate));
+        logEvent(`New year! Population is now ${gameState.population.toLocaleString()}`, 'positive');
+      }
+
+      // Finances
+      const net = gameState.taxIncome - gameState.expenses;
+      gameState.money += net;
+
+      // Random events
+      if (Math.random() < 0.15) triggerRandomEvent();
+
+      updateStats();
+      updateUI();
+    }, 3000);
+
+    function triggerRandomEvent() {
+      const events = [
+        { name: "Tourist Season", probability: 0.3, message: "Tourist season brings extra revenue! +$1000", effect: () => { gameState.money += 1000; }, type: 'positive' },
+        { name: "Economic Boom", probability: 0.2, message: "Economic boom! Commercial tax doubled this month", effect: () => {
+            for (const b of gameState.buildings) if (b.type === 'commercial') gameState.money += buildingTypes['commercial'].tax;
+          }, type: 'positive' },
+        { name: "Natural Disaster", probability: 0.1, message: "Natural disaster! Some buildings are damaged", effect: () => {
+            if (gameState.buildings.length > 0) {
+              const idx = Math.floor(Math.random() * gameState.buildings.length);
+              const b = gameState.buildings[idx];
+              removeBuildingFootprint(b);
+              showMessage(`${buildingTypes[b.type].name} was destroyed!`, 'error');
+            }
+          }, type: 'negative' },
+        { name: "Population Growth", probability: 0.2, message: "Population growth! +5 happiness", effect: () => { gameState.happiness += 5; }, type: 'positive' },
+        { name: "Protest", probability: 0.15, message: "Citizens protest high pollution! -5 happiness", effect: () => { gameState.happiness -= 5; }, type: 'negative',
+          condition: () => gameState.pollution > 30 },
+        { name: "Education Grant", probability: 0.1, message: "Education grant! +$500 per school", effect: () => {
+            const count = gameState.buildings.filter(b => b.type === 'school').length;
+            gameState.money += count * 500;
+          }, type: 'positive' },
+        { name: "Industrial Accident", probability: 0.1, message: "Industrial accident! +5 pollution", effect: () => { gameState.pollution += 5; }, type: 'negative',
+          condition: () => gameState.buildings.some(b => b.type === 'industrial') },
+        { name: "Landmark Celebration", probability: 0.05, message: "Landmark celebration! +10 happiness", effect: () => { gameState.happiness += 10; }, type: 'positive',
+          condition: () => gameState.buildings.some(b => b.type === 'landmark') }
+      ];
+
+      const available = events.filter(e => !e.condition || e.condition());
+      const total = available.reduce((s, e) => s + e.probability, 0);
+      let r = Math.random() * total;
+      let chosen = null;
+      for (const e of available) { if (r < e.probability) { chosen = e; break; } r -= e.probability; }
+      if (chosen) { chosen.effect(); logEvent(chosen.message, chosen.type); }
+    }
+
+    // Initial UI
+    updateStats();
+    updateUI();
+    logEvent("Welcome to Metropolis Builder! Start constructing your city.", 'positive');
+  </script>
+</body>
+</html>
