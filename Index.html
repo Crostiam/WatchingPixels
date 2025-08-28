@@ -32,6 +32,10 @@
     #desktop{position:fixed;top:var(--topbar-height);left:0;right:0;bottom:var(--taskbar-height);background-size:cover;background-position:center;padding:20px;user-select:none}
     #desktop-icons{position:relative;width:100%;height:100%}
     .desktop-icon{position:absolute;display:flex;flex-direction:column;align-items:center;gap:8px;width:100px;padding:10px;border-radius:var(--border-radius-sm);cursor:pointer;text-align:center;font-size:13px;color:var(--text-lighter);text-shadow:1px 1px 3px rgba(0,0,0,.5);border:1px solid transparent;transition:top .2s,left .2s,background .18s,border-color .18s}
+    /* smoother drag */
+    .desktop-icon.dragging{transition:none!important}
+    /* folder drop highlight */
+    .desktop-icon.folder-hover{border-color:var(--primary);background:rgba(var(--primary-rgb),.28)}
     .desktop-icon:hover,.desktop-icon.selected{background:rgba(var(--primary-rgb),.22);border-color:rgba(var(--primary-rgb),.45)}
     .desktop-icon i{font-size:36px;color:#fff;pointer-events:none}
     .desktop-icon-name{width:100%;word-wrap:break-word;pointer-events:none;padding:2px}
@@ -40,8 +44,18 @@
 
     /* Top bar */
     #top-controls{position:fixed;top:0;left:0;right:0;height:var(--topbar-height);background:var(--bg-glass);backdrop-filter:blur(10px);border-bottom:1px solid var(--glass-border);display:flex;align-items:center;gap:6px;padding:0 10px;z-index:1000}
-    #system-info{margin-left:auto;display:flex;align-items:center;gap:14px}
-    #clock{padding:6px 12px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--border-radius-sm);font-family:var(--font-family-mono);font-size:13px}
+    #system-info{margin-left:auto;display:flex;align-items:center;gap:10px}
+    #clock{padding:6px 12px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--border-radius-sm);font-family:var(--font-family-mono);font-size:13px;white-space:nowrap}
+    #user-status{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);border-radius:16px;color:#fff;backdrop-filter:blur(5px);font-size:12px;white-space:nowrap;cursor:pointer}
+    #user-status i{font-size:14px}
+    #signout-btn,#signin-btn{
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.25);
+      color:#fff;border-radius:12px;padding:4px 8px;font-size:11px;cursor:pointer
+    }
+    #signout-btn:hover,#signin-btn:hover{background:rgba(255,255,255,.2)}
+    #signout-btn[hidden],#signin-btn[hidden]{display:none}
+
     #url-container{display:flex;gap:6px;flex:1;max-width:520px;margin:0 6px}
     #url-input{flex:1;padding:8px 12px;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text-primary);font-size:13px}
     #go-btn,.control-btn{background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--text-primary);border-radius:var(--border-radius-sm);padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500}
@@ -132,6 +146,9 @@
     .terminal-input-line{display:flex}
     .terminal-prompt{white-space:pre}
     .terminal-input{flex:1;background:none;border:none;color:#0f0;font-family:var(--font-family-mono);outline:none;font-size:12px}
+
+    /* Explorer grid */
+    .file-explorer-grid{position:relative;width:100%;height:100%;min-height:260px;overflow:auto}
   </style>
 </head>
 <body>
@@ -157,10 +174,6 @@
       <div id="auth-error"></div>
     </div>
   </div>
-  <div id="user-badge">
-    <span id="user-label"></span>
-    <button id="signout-btn" title="Sign out"><i class="ri-logout-box-r-line"></i></button>
-  </div>
 
   <!-- Desktop -->
   <div id="desktop"><div id="desktop-icons"></div></div>
@@ -174,7 +187,15 @@
       <button id="go-btn">GO</button>
     </div>
     <button class="control-btn" id="manual-save-btn" title="Save now (2 min cooldown)"><i class="ri-save-3-line"></i><span>Save</span></button>
-    <div id="system-info"><div id="clock"></div></div>
+    <div id="system-info">
+      <div id="clock"></div>
+      <div id="user-status" title="Authentication status">
+        <i class="ri-user-3-line"></i>
+        <span id="user-status-text">Not signed in</span>
+      </div>
+      <button id="signin-btn" title="Sign in"><i class="ri-login-box-line"></i> Sign in</button>
+      <button id="signout-btn" hidden title="Sign out"><i class="ri-logout-box-r-line"></i> Sign out</button>
+    </div>
   </div>
 
   <!-- Taskbar -->
@@ -221,6 +242,8 @@
 
   <audio id="alarm-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" preload="auto" loop></audio>
   <audio id="music-player-audio"></audio>
+  <!-- Hidden desktop upload input -->
+  <input type="file" id="desktop-file-input" multiple style="display:none">
 
   <script type="module">
     /**************** Firebase Setup ****************/
@@ -256,9 +279,10 @@
     const authPw = document.getElementById('auth-password');
     const authErr = document.getElementById('auth-error');
     const authBar = document.getElementById('auth-loading-bar');
-    const userBadge = document.getElementById('user-badge');
-    const userLabel = document.getElementById('user-label');
     const signoutBtn = document.getElementById('signout-btn');
+    const signInBtn = document.getElementById('signin-btn');
+    const userStatusText = document.getElementById('user-status-text');
+    const userStatusPill = document.getElementById('user-status');
     const providerGoogle = new GoogleAuthProvider();
 
     function showAuthModal(show=true){ authModal.style.display = show ? 'flex' : 'none'; }
@@ -278,6 +302,11 @@
       try { await signInWithPopup(auth, providerGoogle); }
       catch(e){ setAuthError(e.message); } setAuthLoading(false); };
     signoutBtn.onclick = () => signOut(auth);
+    signInBtn.onclick = () => showAuthModal(true);
+    userStatusPill.onclick = () => {
+      const txt = (userStatusText.textContent||'').toLowerCase();
+      if (txt.includes('not signed in') || txt.includes('guest')) showAuthModal(true);
+    };
 
     /**************** Config & Defaults ****************/
     const config = {
@@ -319,30 +348,74 @@
       bookmarks: JSON.parse(localStorage.getItem("bookmarks")) || [],
       alarms: JSON.parse(localStorage.getItem("alarms")) || [],
       fileSystem: initialFileSystem,
-      iconPositions: JSON.parse(localStorage.getItem("iconPositions")) || {},
+      iconPositions: JSON.parse(localStorage.getItem("iconPositions")) || {}, // keyed by full path: Desktop/Folder/File
       selectedIcons: new Set(),
       isRenaming: false
     };
 
-    /**************** Persist Open Browser Windows ****************/
-    const BROWSER_SAVE_KEY="openBrowserWindows";
-    let restoringBrowsers=false;
-    function snapshotOpenBrowserWindows(){
-      if(restoringBrowsers) return;
-      const urls = state.windows
-        .filter(w=>w.appId==='browser')
-        .map(w=>w.element.querySelector('iframe')?.src)
-        .filter(Boolean);
-      localStorage.setItem(BROWSER_SAVE_KEY, JSON.stringify(urls));
+    /**************** Persist Open Windows ****************/
+    const OPEN_WINDOWS_KEY="openWindowsState";
+    function snapshotOpenWindows(){
+      try{
+        const arr = state.windows.map(w=>{
+          const base = {
+            appId: w.appId,
+            x: w.element.offsetLeft,
+            y: w.element.offsetTop,
+            width: w.element.offsetWidth,
+            height: w.element.offsetHeight,
+            minimized: !!w.isMinimized,
+            maximized: w.element.classList.contains('maximized')
+          };
+          switch(w.appId){
+            case 'browser': {
+              const iframe = w.element.querySelector('iframe');
+              const url = iframe?.dataset?.lastUrl || iframe?.src || config.defaultUrl;
+              return {...base, url};
+            }
+            case 'explorer': return {...base, path: w.currentPath || 'Desktop'};
+            case 'editor': return {...base, path: w.filePath || null};
+            case 'imageViewer': return {...base, path: w.filePath || null};
+            default: return base;
+          }
+        });
+        localStorage.setItem(OPEN_WINDOWS_KEY, JSON.stringify(arr));
+      }catch(e){ /* ignore */ }
     }
-    function restoreBrowserWindows(){
-      const list=JSON.parse(localStorage.getItem(BROWSER_SAVE_KEY)||"[]");
-      if(!Array.isArray(list) || !list.length) return;
-      restoringBrowsers=true;
-      list.forEach(url=>appManager.launch('browser',url));
-      setTimeout(()=>{restoringBrowsers=false;},100);
+    function restoreOpenWindows(){
+      const raw = localStorage.getItem(OPEN_WINDOWS_KEY);
+      if(!raw) return;
+      let arr; try{ arr=JSON.parse(raw);}catch{ return; }
+      if(!Array.isArray(arr)) return;
+      arr.forEach(wd=>{
+        switch(wd.appId){
+          case 'browser': appManager.launch('browser', wd.url || config.defaultUrl); break;
+          case 'explorer': appManager.launch('explorer', wd.path || 'Desktop'); break;
+          case 'editor': if(wd.path) appManager.launch('editor', wd.path); break;
+          case 'imageViewer': if(wd.path) appManager.launch('imageViewer', wd.path); break;
+          case 'music': appManager.launch('music'); break;
+          case 'terminal': appManager.launch('terminal'); break;
+          case 'help': appManager.launch('help'); break;
+          case 'calculator': appManager.launch('calculator'); break;
+          case 'clock': appManager.launch('clock'); break;
+          case 'settings': appManager.launch('settings'); break;
+          case 'bookmarks': appManager.launch('bookmarks'); break;
+          default: break;
+        }
+        const last = state.windows[state.windows.length-1];
+        if(!last) return;
+        try{
+          if(typeof wd.x==='number') last.element.style.left = wd.x+'px';
+          if(typeof wd.y==='number') last.element.style.top  = wd.y+'px';
+          if(typeof wd.width==='number') last.element.style.width  = wd.width+'px';
+          if(typeof wd.height==='number') last.element.style.height = wd.height+'px';
+          if(wd.maximized) last.element.classList.add('maximized');
+          if(wd.minimized) windowManager.minimize(last.id);
+        }catch{}
+      });
+      snapshotOpenWindows();
     }
-    window.addEventListener('beforeunload', snapshotOpenBrowserWindows);
+    window.addEventListener('beforeunload', snapshotOpenWindows);
 
     /**************** Cloud Sync (Guest Disabled) ****************/
     const clientId = (crypto?.randomUUID && crypto.randomUUID()) || Math.random().toString(36).slice(2);
@@ -466,7 +539,8 @@
       alarmModal: document.getElementById("alarm-modal"),
       alarmStopBtn: document.getElementById("alarm-stop-btn"),
       musicPlayerAudio: document.getElementById("music-player-audio"),
-      manualSaveBtn: document.getElementById("manual-save-btn")
+      manualSaveBtn: document.getElementById("manual-save-btn"),
+      desktopFileInput: document.getElementById("desktop-file-input")
     };
 
     const utils = {
@@ -482,7 +556,7 @@
         localStorage.setItem("background", state.background);
         localStorage.setItem("bookmarks", JSON.stringify(state.bookmarks));
         localStorage.setItem("alarms", JSON.stringify(state.alarms));
-        snapshotOpenBrowserWindows();
+        snapshotOpenWindows();
         if(immediate) pushCloudState(); else scheduleCloudSave();
       },
       getIconForFile:(name,item)=>{
@@ -559,7 +633,7 @@
           delete parent.children[name];
           delete state.iconPositions[path];
           utils.saveState({});
-          desktopManager.reflowDesktop(); // tidy after delete
+          desktopManager.reflowDesktop();
           return true;
         }return false;
       },
@@ -579,11 +653,63 @@
         utils.saveState({});
         desktopManager.reflowDesktop();
         return true;
+      },
+      moveItem:(srcPath,destFolderPath)=>{
+        const item=utils.findItemByPath(srcPath);
+        const dest=utils.findItemByPath(destFolderPath);
+        if(!item || !dest || dest.type!=='folder') return null;
+        if(item.type==='app'){ utils.showNotification("System applications cannot be moved.","error"); return null; }
+        if(srcPath===destFolderPath) return null;
+        if(srcPath + '/' === destFolderPath.slice(0, srcPath.length+1)) { utils.showNotification("Cannot move a folder into itself.","error"); return null; }
+        const parent=utils.getParentFromPath(srcPath);
+        if(!parent || parent.type!=='folder') return null;
+        const name=srcPath.split('/').pop();
+        const newName=utils.getUniqueName(dest,name);
+        dest.children[newName]=parent.children[name];
+        delete parent.children[name];
+        delete state.iconPositions[srcPath];
+        utils.saveState({});
+        return `${destFolderPath}/${newName}`;
       }
     };
 
-    /**************** Helper ****************/
+    /**************** Helper: positioning and reflow for any folder ****************/
     const clamp=(v,min,max)=>v<min?min:(v>max?max:v);
+
+    // Next free grid pos in a given container (for a given folder)
+    function nextPosInContainer(folderPath, containerEl){
+      const occ=new Set(Object.entries(state.iconPositions)
+        .filter(([k])=>k.startsWith(folderPath+'/'))
+        .map(([,v])=>`${v.left},${v.top}`));
+      const w=containerEl?.clientWidth || elements.desktopIcons.clientWidth || 800;
+      const h=containerEl?.clientHeight|| elements.desktopIcons.clientHeight|| 600;
+      for(let y=0;y<=h-config.gridSize;y+=config.gridSize){
+        for(let x=0;x<=w-config.gridSize;x+=config.gridSize){
+          if(!occ.has(`${x},${y}`)) return {top:y,left:x};
+        }
+      }
+      return {top:0,left:0};
+    }
+    function reflowIconsInFolder(folderPath, containerEl){
+      const folder = utils.findItemByPath(folderPath);
+      if(!folder || folder.type!=='folder') return;
+      const names = Object.keys(folder.children).sort((a,b)=>a.localeCompare(b));
+      let x=0,y=0;
+      const w=containerEl?.clientWidth || elements.desktopIcons.clientWidth || 800;
+      const h=containerEl?.clientHeight|| elements.desktopIcons.clientHeight|| 600;
+      names.forEach(name=>{
+        const p=`${folderPath}/${name}`;
+        state.iconPositions[p]={top:y,left:x};
+        y+=config.gridSize;
+        if(y+config.gridSize>h){ y=0; x+=config.gridSize; }
+        if(x+config.gridSize>w){ x=0; }
+      });
+      utils.saveState({});
+      // Rerender views
+      if(folderPath==='Desktop') desktopManager.renderIcons();
+      const ex = state.windows.find(w=>w.appId==='explorer' && w.currentPath===folderPath);
+      if(ex) appManager.apps.explorer.render(ex, folderPath);
+    }
 
     /**************** Window Manager (bounded drag) ****************/
     const windowManager = {
@@ -611,6 +737,7 @@
         state.windows.push(winObj);
         windowManager.bind(winObj);
         windowManager.activate(id);
+        snapshotOpenWindows();
         return winObj;
       },
       bind:(win)=>{
@@ -620,16 +747,15 @@
           windowManager.activate(win.id);
           windowManager.startDrag(win,e);
         });
-        win.element.querySelector('.window-close').onclick=()=>windowManager.close(win.id);
-        win.element.querySelector('.window-minimize').onclick=()=>windowManager.minimize(win.id);
-        win.element.querySelector('.window-maximize').onclick=()=>windowManager.maximize(win.id);
+        win.element.querySelector('.window-close').onclick=()=>{ windowManager.close(win.id); };
+        win.element.querySelector('.window-minimize').onclick=()=>{ windowManager.minimize(win.id); };
+        win.element.querySelector('.window-maximize').onclick=()=>{ windowManager.maximize(win.id); };
         if(win.refreshable) win.element.querySelector('.window-refresh').onclick=()=>{
           const iframe=win.element.querySelector('iframe'); if(iframe) iframe.src=iframe.src;
         };
         if(win.fullscreenable) win.element.querySelector('.window-fullscreen').onclick=()=>windowManager.toggleFullscreen(win.element);
 
-        // snapshot on resize to keep browser list fresh
-        const ro=new ResizeObserver(()=>snapshotOpenBrowserWindows());
+        const ro=new ResizeObserver(()=>snapshotOpenWindows());
         ro.observe(win.element);
       },
       startDrag:(win,e)=>{
@@ -642,7 +768,7 @@
         const offsetX = e.clientX - rect.left;
         const offsetY = e.clientY - rect.top;
 
-        const minVisibleHeader = 60; // keep at least header portion visible
+        const minVisibleHeader = 60;
 
         function move(ev){
           let newLeft = ev.clientX - offsetX - deskRect.left;
@@ -661,7 +787,7 @@
           document.removeEventListener('mousemove',move);
           document.removeEventListener('mouseup',up);
           header.classList.remove('dragging');
-          snapshotOpenBrowserWindows();
+          snapshotOpenWindows();
         }
         document.addEventListener('mousemove',move);
         document.addEventListener('mouseup',up);
@@ -687,7 +813,7 @@
             state.activeWindow = state.windows.length?state.windows[state.windows.length-1].id:null;
           }
           core.updateTaskbar();
-          snapshotOpenBrowserWindows();
+          snapshotOpenWindows();
         }
       },
       minimize:(id)=>{
@@ -697,7 +823,7 @@
           w.isMinimized=true;
           if(state.activeWindow===id) state.activeWindow=null;
           core.updateTaskbar();
-          snapshotOpenBrowserWindows();
+          snapshotOpenWindows();
         }
       },
       restore:(id)=>{
@@ -706,14 +832,14 @@
           w.element.classList.remove('minimized');
           w.isMinimized=false;
           windowManager.activate(id);
-          snapshotOpenBrowserWindows();
+          snapshotOpenWindows();
         }
       },
       maximize:(id)=>{
         const w=state.windows.find(x=>x.id===id);
         if(w){
           w.element.classList.toggle('maximized');
-          snapshotOpenBrowserWindows();
+          snapshotOpenWindows();
         }
       },
       toggleFullscreen:(el)=>{
@@ -732,7 +858,7 @@
       wrap.appendChild(lines); wrap.appendChild(textarea);
       function update(){
         const count=textarea.value.split('\n').length;
-        let out=''; for(let i=1;i<=count;i++) out+=i+"\\n";
+        let out=''; for(let i=1;i<=count;i++) out+=i+"\n";
         lines.textContent=out;
       }
       textarea.addEventListener('input',update);
@@ -757,11 +883,13 @@
             const existing=state.windows.find(w=>w.appId==='explorer');
             if(existing){ appManager.apps.explorer.render(existing,path); windowManager.activate(existing.id); }
             else {
-              const win=windowManager.create({title:'File Explorer',icon:'ri-folder-line',className:'file-explorer-window',width:600,height:400,appId:'explorer'});
+              const win=windowManager.create({title:'File Explorer',icon:'ri-folder-line',className:'file-explorer-window',width:700,height:520,appId:'explorer'});
               appManager.apps.explorer.render(win,path);
             }
           },
           render:(win,path)=>{
+            win.currentPath = path; // track path for restore
+            snapshotOpenWindows();
             const content=win.element.querySelector('.window-content');
             const titleSpan=win.element.querySelector('.window-title span');
             titleSpan.textContent=path.split('/').pop()||'File Explorer';
@@ -771,24 +899,78 @@
               <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f1f2f6;border-bottom:1px solid #dadde2;font-size:12px;">
                 <button id="back-${win.id}" ${path==='Desktop'?'disabled':''} style="padding:4px 10px;font-size:12px;">◀</button>
                 <div style="flex:1;overflow:auto;white-space:nowrap;">${breadcrumbs}</div>
-                <button id="reflow-btn-${win.id}" style="padding:4px 8px;font-size:11px;">Reflow Desktop</button>
+                <button id="reflow-btn-${win.id}" style="padding:4px 8px;font-size:11px;">Reflow</button>
               </div>
-              <div class="file-explorer-grid" style="padding:10px;display:flex;flex-wrap:wrap;gap:10px;"></div>`;
+              <div class="file-explorer-grid"></div>`;
             content.querySelector('#back-'+win.id).onclick=goUp;
             content.querySelectorAll('.breadcrumb-item').forEach(b=>b.onclick=()=>appManager.apps.explorer.render(win,b.dataset.path));
-            content.querySelector('#reflow-btn-'+win.id).onclick=()=>{ desktopManager.reflowDesktop(true); utils.showNotification("Desktop icons reflowed.","info"); };
             const grid=content.querySelector('.file-explorer-grid');
+            content.querySelector('#reflow-btn-'+win.id).onclick=()=>{ reflowIconsInFolder(path, grid); utils.showNotification("Icons reflowed.","info"); };
+            // Context menu on empty grid
             grid.addEventListener('contextmenu',e=>{ if(e.target===grid) desktopManager.showContextMenu(e,'explorer-bg',{path,win}); });
+            // Make grid DnD target for moving items into this folder
+            grid.addEventListener('dragover',e=>{ e.preventDefault(); grid.classList.add('folder-hover'); });
+            grid.addEventListener('dragleave',e=>grid.classList.remove('folder-hover'));
+            grid.addEventListener('drop',e=>{
+              e.preventDefault();
+              grid.classList.remove('folder-hover');
+              const src=e.dataTransfer.getData('text/plain');
+              if(src && src!==path){
+                const res=utils.moveItem(src, path);
+                if(res){
+                  appManager.apps.explorer.render(win,path);
+                  desktopManager.renderIcons();
+                }
+              }
+            });
+            // Render icons absolutely with stored positions
             const folder=utils.findItemByPath(path);
             if(folder && folder.type==='folder'){
               Object.entries(folder.children).forEach(([name,item])=>{
+                const full=`${path}/${name}`;
                 const icon=document.createElement('div');
                 icon.className='desktop-icon';
-                icon.dataset.path=`${path}/${name}`;
-                const cls=item.type==='folder'?'ri-folder-3-line':(item.type==='app'?item.icon:utils.getIconForFile(name,item));
+                icon.dataset.path=full;
+                icon.style.position='absolute';
+                const cls=item.type==='folder'? 'ri-folder-3-line' : (item.type==='app'?item.icon:utils.getIconForFile(name,item));
                 icon.innerHTML=`<i class="${cls}"></i><div class="desktop-icon-name">${name}</div>`;
-                icon.ondblclick=()=>desktopManager.onIconDoubleClick(item,icon.dataset.path);
+                if(!state.iconPositions[full]){
+                  state.iconPositions[full]=nextPosInContainer(path, grid);
+                  utils.saveState({});
+                }
+                const pos=state.iconPositions[full];
+                icon.style.left=pos.left+'px';
+                icon.style.top =pos.top +'px';
+                // open behavior
+                icon.ondblclick=()=>desktopManager.onIconDoubleClick(item,full);
                 icon.addEventListener('contextmenu',e=>desktopManager.showContextMenu(e,'icon',icon));
+                // HTML5 DnD inside explorer
+                icon.setAttribute('draggable','true');
+                icon.addEventListener('dragstart',e=>{
+                  e.dataTransfer.setData('text/plain', full);
+                  setTimeout(()=>icon.classList.add('dragging'),0);
+                });
+                icon.addEventListener('dragend',()=>icon.classList.remove('dragging'));
+                // Folder drop target
+                if(item.type==='folder'){
+                  icon.addEventListener('dragover',e=>{ e.preventDefault(); icon.classList.add('folder-hover'); });
+                  icon.addEventListener('dragleave',()=>icon.classList.remove('folder-hover'));
+                  icon.addEventListener('drop',e=>{
+                    e.preventDefault();
+                    icon.classList.remove('folder-hover');
+                    const src=e.dataTransfer.getData('text/plain');
+                    if(src && src!==full){
+                      const moved=utils.moveItem(src, full);
+                      if(moved){
+                        appManager.apps.explorer.render(win,path);
+                        // If dropping into this folder and it is open elsewhere, update that window too
+                        const other=state.windows.find(w=>w.appId==='explorer' && w.currentPath===full);
+                        if(other) appManager.apps.explorer.render(other,full);
+                        desktopManager.renderIcons();
+                      }
+                    }
+                  });
+                }
                 grid.appendChild(icon);
               });
             }
@@ -805,6 +987,8 @@
                 </div>
                 <textarea class="text-editor-content"></textarea>
               </div>`});
+            win.filePath = path; // track for restore
+            snapshotOpenWindows();
             const ta=win.element.querySelector('.text-editor-content');
             const title=win.element.querySelector('.window-title');
             const status=win.element.querySelector('.save-status');
@@ -855,10 +1039,12 @@
         imageViewer:{
           launch:(path)=>{
             const file=utils.findItemByPath(path); if(!file||file.type!=='file') return;
-            windowManager.create({title:path.split('/').pop(),icon:'ri-image-line',className:'image-viewer-window',width:700,height:500,appId:'imageViewer',
+            const win = windowManager.create({title:path.split('/').pop(),icon:'ri-image-line',className:'image-viewer-window',width:700,height:500,appId:'imageViewer',
               content:`<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#111;">
                 <img src="${file.content}" style="max-width:100%;max-height:100%;object-fit:contain;">
               </div>`});
+            win.filePath = path;
+            snapshotOpenWindows();
           }
         },
         music:{
@@ -890,6 +1076,7 @@
                   </div>
                 </div>
               </div>`});
+            snapshotOpenWindows();
             const audio=elements.musicPlayerAudio;
             const root=win.element.querySelector('.window-content');
             const song=root.querySelector('#song-title');
@@ -917,6 +1104,7 @@
             let dir='Desktop',hist=[],hIdx=-1;
             const win=windowManager.create({title:'Terminal',icon:'ri-terminal-box-line',className:'terminal-window',width:600,height:400,appId:'terminal',
               content:`<div class="terminal-content"><div class="terminal-input-line"><span class="terminal-prompt"></span><input class="terminal-input" type="text"></div></div>`});
+            snapshotOpenWindows();
             const content=win.element.querySelector('.terminal-content');
             const input=content.querySelector('.terminal-input');
             const prompt=content.querySelector('.terminal-prompt');
@@ -987,8 +1175,9 @@
                 </ul>
                 <h3><i class="ri-timer-line"></i> Autosave</h3><p>Active 5m, idle 10m, manual Save button (2m cooldown).</p>
                 <h3><i class="ri-window-line"></i> Browser Session</h3><p>Open browser windows are restored after reload.</p>
-                <h3><i class="ri-layout-grid-line"></i> Icon Reflow</h3><p>Icons reflow available via Settings or Desktop menu.</p>
+                <h3><i class="ri-layout-grid-line"></i> Icon Reflow</h3><p>Icons reflow available via Settings or Desktop menu, and inside any folder from Explorer.</p>
               </div>`});
+            snapshotOpenWindows();
           }
         },
         calculator:{
@@ -1002,6 +1191,7 @@
                   <button data-key="0">0</button><button data-key=".">.</button><button class="clear" data-clear="C">C</button><button class="operator" data-op="+">+</button>
                   <button class="equal" data-eq="=">=</button>
                 </div>`});
+            snapshotOpenWindows();
             const display=win.element.querySelector('#calc-display');
             let current='0',stored=null,op=null,just=false;
             const render=()=>display.textContent=current;
@@ -1030,6 +1220,7 @@
         settings:{
           launch:()=>{
             const win=windowManager.create({title:'Settings',icon:'ri-settings-3-line',className:'settings-window',width:620,height:560,appId:'settings'});
+            snapshotOpenWindows();
             const content=win.element.querySelector('.window-content');
             content.innerHTML=`
               <div class="settings-section">
@@ -1127,10 +1318,20 @@
               width:config.defaultWindowSize.width,height:config.defaultWindowSize.height,
               refreshable:true,fullscreenable:true,
               content:`<iframe src="${url}" style="width:100%;height:100%;border:none;"></iframe>`});
-            snapshotOpenBrowserWindows();
+            // Track current URL (best effort)
+            const iframe = win.element.querySelector('iframe');
+            const updateUrl = ()=>{
+              let u = iframe?.src || url;
+              try { if(iframe?.contentWindow) u = iframe.contentWindow.location.href; } catch {}
+              if(iframe) iframe.dataset.lastUrl = u;
+              window.temp1 = u; // expose latest URL
+              snapshotOpenWindows();
+            };
+            iframe?.addEventListener('load', updateUrl);
+            updateUrl();
           }
         },
-        bookmarks:{ launch:()=>core.toggleBookmarksOverlay() },
+        bookmarks:{ launch:()=>{ core.toggleBookmarksOverlay(); snapshotOpenWindows(); } },
         clock:{
           launch:()=>{
             let clockInterval,timerInterval;
@@ -1165,6 +1366,7 @@
                 </div>
                 <div id="alarms-list" style="margin-top:16px;"></div>
               </div>`});
+            snapshotOpenWindows();
             const c=win.element.querySelector('.window-content');
             const clk=c.querySelector('#clock-display');
             const dateEl=c.querySelector('#date-display');
@@ -1177,21 +1379,22 @@
             const disp=c.querySelector('#timer-display'), inputs=c.querySelector('.timer-inputs');
             const h=c.querySelector('#timer-h'), m=c.querySelector('#timer-m'), s=c.querySelector('#timer-s');
             const start=c.querySelector('#timer-start'), pause=c.querySelector('#timer-pause'), reset=c.querySelector('#timer-reset');
-            let total=0, paused=false;
+            let total=0, paused=false, timerId=null;
             const show=()=>{ const H=Math.floor(total/3600), M=Math.floor((total%3600)/60), S=total%60; disp.textContent=`${String(H).padStart(2,'0')}:${String(M).padStart(2,'0')}:${String(S).padStart(2,'0')}`; };
             start.onclick=()=>{
-              if(paused) paused=false; else total=parseInt(h.value)*3600+parseInt(m.value)*60+parseInt(s.value);
+              if(paused) paused=false; else total=parseInt(h.value||0)*3600+parseInt(m.value||0)*60+parseInt(s.value||0);
               if(total<=0) return;
               show();
-              timerInterval=setInterval(()=>{
+              clearInterval(timerId);
+              timerId=setInterval(()=>{
                 if(paused) return;
                 total--; show();
-                if(total<=0){ clearInterval(timerInterval); utils.showNotification("Timer finished!","success"); elements.alarmSound.loop=false; elements.alarmSound.play(); reset.click(); }
+                if(total<=0){ clearInterval(timerId); utils.showNotification("Timer finished!","success"); elements.alarmSound.loop=false; elements.alarmSound.play(); reset.click(); }
               },1000);
               start.style.display='none'; pause.style.display='inline-block'; disp.style.display='block'; inputs.style.display='none';
             };
             pause.onclick=()=>{ paused=true; start.textContent='Resume'; start.style.display='inline-block'; pause.style.display='none'; };
-            reset.onclick=()=>{ clearInterval(timerInterval); total=0; paused=false; show(); start.textContent='Start'; start.style.display='inline-block'; pause.style.display='none'; disp.style.display='none'; inputs.style.display='flex'; };
+            reset.onclick=()=>{ clearInterval(timerId); total=0; paused=false; show(); start.textContent='Start'; start.style.display='inline-block'; pause.style.display='none'; disp.style.display='none'; inputs.style.display='flex'; };
             // Alarms
             const setBtn=c.querySelector('#set-alarm-btn'); const alarmTime=c.querySelector('#alarm-time'); const list=c.querySelector('#alarms-list');
             const render=()=>{ list.innerHTML=''; state.alarms.forEach((a,i)=>{ const d=document.createElement('div'); d.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#fff;border-radius:8px;margin-bottom:8px;font-size:13px;'; d.innerHTML=`<span>${a.time}</span><button data-i="${i}" style="background:#ef4444;color:#fff;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:12px;">&times;</button>`; list.appendChild(d); }); };
@@ -1208,6 +1411,16 @@
       init(){
         elements.desktop.addEventListener('contextmenu',e=>desktopManager.showContextMenu(e,'desktop'));
         elements.desktop.addEventListener('mousedown',e=>desktopManager.onMouseDown(e));
+        // Desktop upload via DnD
+        const handleDragOver=(e)=>{ if(e.dataTransfer){ e.preventDefault(); e.dataTransfer.dropEffect='copy'; } };
+        const handleDrop=(e)=>{ if(e.dataTransfer?.files?.length){ e.preventDefault(); importFilesToDesktop(e.dataTransfer.files); } };
+        elements.desktop.addEventListener('dragenter',handleDragOver);
+        elements.desktop.addEventListener('dragover',handleDragOver);
+        elements.desktop.addEventListener('drop',handleDrop);
+        elements.desktopIcons.addEventListener('dragenter',handleDragOver);
+        elements.desktopIcons.addEventListener('dragover',handleDragOver);
+        elements.desktopIcons.addEventListener('drop',handleDrop);
+
         desktopManager.renderIcons();
         desktopManager.fixOverlapsOnLoad();
       },
@@ -1217,6 +1430,7 @@
         Object.entries(items).forEach(([n,it])=>desktopManager.createIcon(n,it));
       },
       createIcon(name,item){
+        const container=elements.desktopIcons;
         const path=`Desktop/${name}`;
         const div=document.createElement('div');
         div.className='desktop-icon';
@@ -1233,10 +1447,12 @@
         div.style.left=pos.left+'px';
         div.addEventListener('mousedown',e=>desktopManager.onIconMouseDown(e,div));
         div.addEventListener('contextmenu',e=>desktopManager.showContextMenu(e,'icon',div));
-        elements.desktopIcons.appendChild(div);
+        container.appendChild(div);
       },
       nextPos(){
-        const occ=new Set(Object.values(state.iconPositions).map(p=>`${p.left},${p.top}`));
+        const occ=new Set(Object.values(state.iconPositions)
+          .filter((v,idx)=>true)
+          .map(p=>`${p.left},${p.top}`));
         const w=elements.desktopIcons.clientWidth;
         const h=elements.desktopIcons.clientHeight;
         for(let y=0;y<=h-config.gridSize;y+=config.gridSize){
@@ -1249,6 +1465,7 @@
       fixOverlapsOnLoad(){
         const used=new Set(); let changed=false;
         Object.keys(state.iconPositions).forEach(path=>{
+          if(!path.startsWith('Desktop/')) return; // only check desktop on load
           const pos=state.iconPositions[path];
           const key=`${pos.left},${pos.top}`;
           if(used.has(key)){
@@ -1260,7 +1477,6 @@
       },
       reflowDesktop(force=false){
         const items=Object.keys(state.fileSystem.Desktop.children).sort((a,b)=>a.localeCompare(b));
-        state.iconPositions={};
         const w=elements.desktopIcons.clientWidth;
         const h=elements.desktopIcons.clientHeight;
         let x=0,y=0;
@@ -1268,31 +1484,34 @@
           state.iconPositions[`Desktop/${name}`]={top:y,left:x};
           y+=config.gridSize;
           if(y+config.gridSize>h){ y=0; x+=config.gridSize; }
-          if(x+config.gridSize>w){ x=0; } // wrap if needed
+          if(x+config.gridSize>w){ x=0; }
         });
         utils.saveState({});
         desktopManager.renderIcons();
         if(force) utils.showNotification("Desktop icons reflowed.","info");
       },
       onMouseDown(e){
-        if(e.target!==elements.desktopIcons && e.target!==elements.desktop) return;
+        const desktopEl=elements.desktop;
+        const iconsEl=elements.desktopIcons;
+        if(e.target!==iconsEl && e.target!==desktopEl) return;
         desktopManager.clearSelected();
         const sx=e.clientX, sy=e.clientY;
-        const rect=elements.desktop.getBoundingClientRect();
-        Object.assign(elements.selectionBox.style,{left:(sx-rect.left)+'px',top:(sy-rect.top)+'px',width:'0px',height:'0px',display:'block'});
+        const rect=desktopEl.getBoundingClientRect();
+        const selection=elements.selectionBox;
+        Object.assign(selection.style,{left:(sx-rect.left)+'px',top:(sy-rect.top)+'px',width:'0px',height:'0px',display:'block'});
         const move=me=>{
           const cx=me.clientX,cy=me.clientY;
           const w=Math.abs(cx-sx), h=Math.abs(cy-sy);
           const nx=Math.min(sx,cx)-rect.left, ny=Math.min(sy,cy)-rect.top;
-          Object.assign(elements.selectionBox.style,{left:nx+'px',top:ny+'px',width:w+'px',height:h+'px'});
-          const box=elements.selectionBox.getBoundingClientRect();
-          document.querySelectorAll('.desktop-icon').forEach(ic=>{
+          Object.assign(selection.style,{left:nx+'px',top:ny+'px',width:w+'px',height:h+'px'});
+          const box=selection.getBoundingClientRect();
+          document.querySelectorAll('#desktop-icons .desktop-icon').forEach(ic=>{
             const r=ic.getBoundingClientRect();
             const over=r.left<box.right && r.right>box.left && r.top<box.bottom && r.bottom>box.top;
             ic.classList.toggle('selected',over);
           });
         };
-        const up=()=>{ elements.selectionBox.style.display='none'; state.selectedIcons=new Set(document.querySelectorAll('.desktop-icon.selected')); document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
+        const up=()=>{ selection.style.display='none'; state.selectedIcons=new Set(document.querySelectorAll('#desktop-icons .desktop-icon.selected')); document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
         document.addEventListener('mousemove',move);
         document.addEventListener('mouseup',up);
       },
@@ -1301,15 +1520,23 @@
         let drag=false; const thresh=5;
         if(!e.ctrlKey && !icon.classList.contains('selected')) desktopManager.clearSelected();
         if(e.ctrlKey) icon.classList.toggle('selected'); else icon.classList.add('selected');
-        state.selectedIcons=new Set(document.querySelectorAll('.desktop-icon.selected'));
+        state.selectedIcons=new Set(document.querySelectorAll('#desktop-icons .desktop-icon.selected'));
         const starts=Array.from(state.selectedIcons).map(el=>({el,x:el.offsetLeft,y:el.offsetTop,w:el.offsetWidth,h:el.offsetHeight}));
         const sx=e.clientX, sy=e.clientY;
         const deskW=elements.desktopIcons.clientWidth;
         const deskH=elements.desktopIcons.clientHeight;
-        const move=me=>{
-          if(!drag && (Math.abs(me.clientX-sx)>thresh || Math.abs(me.clientY-sy)>thresh)){ drag=true; icon.ondblclick=null; }
+        let dropHoverEl=null;
+        let raf=null, pending=null;
+
+        const clearFolderHover=()=>{ if(dropHoverEl){ dropHoverEl.classList.remove('folder-hover'); dropHoverEl=null; } };
+
+        const moveImpl=(me)=>{
+          if(!drag && (Math.abs(me.clientX-sx)>thresh || Math.abs(me.clientY-sy)>thresh)){
+            drag=true; icon.ondblclick=null;
+            state.selectedIcons.forEach(el=>el.classList.add('dragging'));
+          }
+          const dx=me.clientX-sx, dy=me.clientY-sy;
           if(drag){
-            const dx=me.clientX-sx, dy=me.clientY-sy;
             starts.forEach(p=>{
               let nl=p.x+dx, nt=p.y+dy;
               nl=clamp(nl,0, deskW-p.w);
@@ -1317,11 +1544,57 @@
               p.el.style.left=nl+'px';
               p.el.style.top=nt+'px';
             });
+            const under=document.elementFromPoint(me.clientX, me.clientY);
+            const iconEl=under && under.closest ? under.closest('#desktop-icons .desktop-icon') : null;
+            if(iconEl){
+              const path=iconEl.dataset.path;
+              const item=utils.findItemByPath(path);
+              const isSelected=[...state.selectedIcons].some(s=>s===iconEl);
+              if(item && item.type==='folder' && !isSelected){
+                if(dropHoverEl!==iconEl){
+                  if(dropHoverEl) dropHoverEl.classList.remove('folder-hover');
+                  dropHoverEl=iconEl;
+                  dropHoverEl.classList.add('folder-hover');
+                }
+              } else {
+                clearFolderHover();
+              }
+            } else {
+              clearFolderHover();
+            }
+          }
+        };
+        const move=(me)=>{
+          me.preventDefault();
+          pending=me;
+          if(!raf){
+            raf=requestAnimationFrame(()=>{ moveImpl(pending); raf=null; });
           }
         };
         const up=()=>{
           document.removeEventListener('mousemove',move);
           document.removeEventListener('mouseup',up);
+          state.selectedIcons.forEach(el=>el.classList.remove('dragging'));
+          if(drag && dropHoverEl){
+            const destPath=dropHoverEl.dataset.path;
+            let moved=0;
+            state.selectedIcons.forEach(el=>{
+              const srcPath=el.dataset.path;
+              if(srcPath===destPath) return;
+              const it=utils.findItemByPath(srcPath);
+              if(!it) return;
+              if(it.type==='app') return;
+              const res=utils.moveItem(srcPath, destPath);
+              if(res) moved++;
+            });
+            clearFolderHover();
+            if(moved>0){
+              desktopManager.renderIcons();
+              utils.showNotification(`Moved ${moved} item${moved>1?'s':''} to ${destPath.split('/').pop()}`,'success');
+              return;
+            }
+          }
+          clearFolderHover();
           if(drag){
             starts.forEach(p=>{
               const w=elements.desktopIcons.clientWidth;
@@ -1352,7 +1625,7 @@
         else if(item.type==='file') appManager.launch('editor',path);
       },
       clearSelected(){
-        document.querySelectorAll('.desktop-icon.selected').forEach(i=>i.classList.remove('selected'));
+        document.querySelectorAll('#desktop-icons .desktop-icon.selected').forEach(i=>i.classList.remove('selected'));
         state.selectedIcons.clear();
       },
       showContextMenu(e,type,target){
@@ -1365,6 +1638,7 @@
             menu=`<div class="context-item" data-action="create-folder"><i class="ri-folder-add-line"></i>New Folder</div>
               <div class="context-item" data-action="create-file"><i class="ri-file-add-line"></i>New Text File</div>
               <div class="context-item" data-action="create-link"><i class="ri-link"></i>New Link</div>
+              <div class="context-item" data-action="upload-files"><i class="ri-upload-2-line"></i>Upload Files</div>
               <div class="context-item" data-action="reflow"><i class="ri-layout-grid-line"></i>Reflow Icons</div>`;
             break;
           case 'icon':
@@ -1383,21 +1657,23 @@
           case 'explorer-bg':
             menu=`<div class="context-item" data-action="create-folder-here"><i class="ri-folder-add-line"></i>New Folder</div>
               <div class="context-item" data-action="create-file-here"><i class="ri-file-add-line"></i>New Text File</div>
-              <div class="context-item" data-action="create-file-from-url"><i class="ri-download-cloud-2-line"></i>New File from URL</div>`;
+              <div class="context-item" data-action="create-file-from-url"><i class="ri-download-cloud-2-line"></i>New File from URL</div>
+              <div class="context-item" data-action="reflow-here"><i class="ri-layout-grid-line"></i>Reflow Here</div>`;
             break;
         }
-        elements.contextMenu.innerHTML=menu;
-        elements.contextMenu.style.display='block';
-        const menuRect=elements.contextMenu.getBoundingClientRect();
+        const cm=elements.contextMenu;
+        cm.innerHTML=menu;
+        cm.style.display='block';
+        const menuRect=cm.getBoundingClientRect();
         const tRect=target instanceof Element?target.getBoundingClientRect():{top:e.clientY,left:e.clientX};
         let top=e.clientY,left=e.clientX;
         if(type==='start'){ top=tRect.top - menuRect.height - 10; left=tRect.left; }
-        elements.contextMenu.style.top=top+'px';
-        elements.contextMenu.style.left=left+'px';
-        elements.contextMenu.onclick=ce=>{
+        cm.style.top=top+'px';
+        cm.style.left=left+'px';
+        cm.onclick=ce=>{
           const ct=ce.target.closest('.context-item'); if(!ct) return;
           desktopManager.handleContextAction(ct.dataset.action,target,ce);
-          elements.contextMenu.style.display='none';
+          cm.style.display='none';
         };
       },
       handleContextAction(action,target,event){
@@ -1411,6 +1687,11 @@
               const name=prompt("Link name:","My Link");
               if(name){ utils.createLink('Desktop',name,url); desktopManager.renderIcons(); }
             } break;
+          }
+          case 'upload-files':{
+            elements.desktopFileInput.value='';
+            elements.desktopFileInput.click();
+            break;
           }
           case 'reflow': desktopManager.reflowDesktop(true); break;
           case 'create-folder-here':{
@@ -1429,10 +1710,21 @@
               if(n){ utils.createFile(target.path,n,fUrl); appManager.apps.explorer.render(target.win,target.path); }
             } break;
           }
+          case 'reflow-here':{
+            const grid = target.win?.element?.querySelector('.file-explorer-grid');
+            reflowIconsInFolder(target.path, grid);
+            break;
+          }
           case 'open': if(item) desktopManager.onIconDoubleClick(item,path); break;
           case 'delete':
             if(confirm(`Delete ${path.split('/').pop()}?`)){
-              if(utils.deleteItem(path)) target.remove();
+              if(utils.deleteItem(path)) {
+                // remove from desktop or explorer grid
+                target.remove?.();
+                const ex = state.windows.find(w=>w.appId==='explorer' && w.currentPath===utils.getParentFromPath(path) ? utils.getParentFromPath(path) : 'Desktop');
+                if(ex) appManager.apps.explorer.render(ex, ex.currentPath);
+                desktopManager.renderIcons();
+              }
             } break;
           case 'rename':{
             const nameEl=target.querySelector('.desktop-icon-name');
@@ -1447,6 +1739,9 @@
               if(utils.renameItem(path,newName)){ target.dataset.path=path.substring(0,path.lastIndexOf('/')+1)+newName; }
               else nameEl.textContent=path.split('/').pop();
               state.isRenaming=false;
+              desktopManager.renderIcons();
+              const exWin = state.windows.find(w=>w.appId==='explorer' && w.currentPath===utils.getParentFromPath(target.dataset.path));
+              if(exWin) appManager.apps.explorer.render(exWin, exWin.currentPath);
             };
             const outside=e=>{ if(!nameEl.contains(e.target)) finish(); };
             const key=e=>{ if(e.key==='Enter'){ e.preventDefault(); finish(); } else if(e.key==='Escape'){ nameEl.textContent=path.split('/').pop(); finish(); } };
@@ -1467,23 +1762,23 @@
         desktopManager.init();
         core.bindEvents();
         core.renderBookmarks();
-        if(!localStorage.getItem('hasVisited')) localStorage.setItem('hasVisited','true');
         const overlay=document.getElementById('loading-overlay'); if(overlay) setTimeout(()=>overlay.remove(),450);
         showAuthModal(true);
         setupManualSave();
         setupAutosave();
-        restoreBrowserWindows();
+        restoreOpenWindows();
       },
       bindEvents(){
         elements.startBtn.addEventListener('click',e=>desktopManager.showContextMenu(e,'start',elements.startBtn));
         document.addEventListener('click',e=>{
-          if(!elements.contextMenu.contains(e.target)) elements.contextMenu.style.display='none';
+          const cm=elements.contextMenu;
+          if(!cm.contains(e.target)) cm.style.display='none';
           if(!e.target.closest('.desktop-icon') && !state.isRenaming) desktopManager.clearSelected();
         });
         elements.contextMenu.addEventListener('click',e=>e.stopPropagation());
-        elements.bookmarksBtn.addEventListener('click',core.toggleBookmarksOverlay);
-        elements.closeBookmarks.addEventListener('click',core.toggleBookmarksOverlay);
-        elements.bookmarksOverlay.querySelectorAll('.bookmark-select').forEach(sel=>{
+        elements.bookmarksBtn.addEventListener('click',()=>{ core.toggleBookmarksOverlay(); snapshotOpenWindows(); });
+        elements.closeBookmarks.addEventListener('click',()=>{ core.toggleBookmarksOverlay(); snapshotOpenWindows(); });
+        document.querySelectorAll('.bookmark-select').forEach(sel=>{
           sel.onchange=e=>{ const url=e.target.value; if(url){ appManager.launch('browser',url); core.toggleBookmarksOverlay(); e.target.value=''; } };
         });
         elements.addBookmarkForm.addEventListener('submit',e=>{
@@ -1515,22 +1810,30 @@
           elements.alarmModal.style.display='none';
           elements.alarmSound.pause(); elements.alarmSound.currentTime=0;
         });
+        // Also support desktop upload via hidden input
+        elements.desktopFileInput.addEventListener('change',e=>{
+          if(e.target.files && e.target.files.length){
+            importFilesToDesktop(e.target.files);
+          }
+        });
       },
       toggleBookmarksOverlay(){
-        elements.bookmarksOverlay.style.display=elements.bookmarksOverlay.style.display==='flex'?'none':'flex';
-        if(elements.bookmarksOverlay.style.display==='none'){
+        const ov=elements.bookmarksOverlay;
+        ov.style.display=ov.style.display==='flex'?'none':'flex';
+        if(ov.style.display==='none'){
           const n=document.getElementById('new-bookmark-name'); const u=document.getElementById('new-bookmark-url');
           if(n) n.value=''; if(u) u.value='';
         }
       },
       renderBookmarks(){
-        elements.customBookmarksList.innerHTML='';
+        const list=elements.customBookmarksList;
+        list.innerHTML='';
         state.bookmarks.forEach((bm,i)=>{
           const d=document.createElement('div');
           d.className='bookmark-item';
           d.dataset.url=bm.url;
           d.innerHTML=`<span>${bm.name}</span><button class="delete-bookmark" data-index="${i}"><i class="ri-close-line"></i></button>`;
-          elements.customBookmarksList.appendChild(d);
+          list.appendChild(d);
         });
       },
       checkAlarms(){
@@ -1557,7 +1860,8 @@
         }
       },
       updateTaskbar(){
-        elements.taskbarApps.innerHTML='';
+        const cont=elements.taskbarApps;
+        cont.innerHTML='';
         state.windows.forEach(w=>{
           const btn=document.createElement('button');
           btn.className='taskbar-item';
@@ -1567,9 +1871,9 @@
             if(w.isMinimized) windowManager.restore(w.id);
             else if(state.activeWindow===w.id) windowManager.minimize(w.id);
             else windowManager.activate(w.id);
-            snapshotOpenBrowserWindows();
+            snapshotOpenWindows();
           };
-          elements.taskbarApps.appendChild(btn);
+          cont.appendChild(btn);
         });
       }
     };
@@ -1578,6 +1882,35 @@
       elements.desktop.style.backgroundImage=`url('${state.background}')`;
       desktopManager.renderIcons();
       core.renderBookmarks();
+    }
+
+    /**************** Upload helper ****************/
+    async function importFilesToDesktop(fileList){
+      const files=Array.from(fileList);
+      if(!files.length) return;
+      const reads=files.map(file=>new Promise(resolve=>{
+        const reader=new FileReader();
+        const isText = /^text\//.test(file.type) || /\.(txt|md|json|js|css|html?|csv|xml)$/i.test(file.name);
+        reader.onload=()=>resolve({name:file.name,content:reader.result});
+        reader.onerror=()=>resolve(null);
+        try{
+          if(isText) reader.readAsText(file);
+          else reader.readAsDataURL(file);
+        }catch{ resolve(null); }
+      }));
+      const results=await Promise.all(reads);
+      let count=0;
+      results.forEach(r=>{
+        if(!r) return;
+        const p=utils.createFile('Desktop', r.name, r.content||'');
+        if(p){ count++; }
+      });
+      if(count>0){
+        desktopManager.renderIcons();
+        utils.showNotification(`Uploaded ${count} file${count>1?'s':''} to Desktop.`,'success');
+      } else {
+        utils.showNotification("No files uploaded.","warning");
+      }
     }
 
     /**************** Manual Save & Autosave ****************/
@@ -1631,24 +1964,28 @@
       }, 30000);
     }
 
-    /**************** Auth State Listener ****************/
+    /**************** Auth State Listener (Top bar user status) ****************/
     onAuthStateChanged(auth, async (user)=>{
-      cloudUser=user;
-      if(user){
-        userBadge.style.display='flex';
-        if(user.isAnonymous){
-          userLabel.textContent='Guest (local only)';
-          showAuthModal(false);
-          applyStateToUI();
-          if(unsubscribeUserDoc){ unsubscribeUserDoc(); unsubscribeUserDoc=null; }
+      cloudUser = user;
+      if (user) {
+        if (user.isAnonymous) {
+          userStatusText.textContent = 'Guest (local only)';
+          if (unsubscribeUserDoc){ unsubscribeUserDoc(); unsubscribeUserDoc=null; }
         } else {
-          userLabel.textContent=user.email || user.displayName || user.uid.slice(0,8);
-          showAuthModal(false);
+          const label = user.email || user.displayName || user.uid.slice(0,8);
+          userStatusText.textContent = `Signed in: ${label}`;
           await loadCloudState(user.uid);
         }
+        elements.signInBtn.hidden = true;
+        elements.signoutBtn.hidden = false;
+        showAuthModal(false);
+        applyStateToUI();
       } else {
-        if(unsubscribeUserDoc){ unsubscribeUserDoc(); unsubscribeUserDoc=null; }
-        userBadge.style.display='none';
+        userStatusText.textContent = 'Not signed in';
+        elements.signInBtn.hidden = false;
+        elements.signoutBtn.hidden = true;
+        cloudUser = null;
+        if (unsubscribeUserDoc){ unsubscribeUserDoc = null; }
         showAuthModal(true);
       }
     });
@@ -1657,6 +1994,7 @@
     function start(){ core.init(); }
     if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
 
+    // Expose for debugging
     window.miniOSState = state;
   </script>
 </body>
